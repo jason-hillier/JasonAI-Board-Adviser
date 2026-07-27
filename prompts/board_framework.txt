@@ -82,3 +82,37 @@ Explain why.
 # NEXT ACTIONS
 
 Recommend the next five executive actions.
+
+# EXECUTIVE CHALLENGE
+
+If you were the Chairman, identify the five hardest questions that should be asked before approving this proposal.
+
+Challenge assumptions.
+
+Identify weak logic.
+
+Highlight optimism bias.
+
+State where management evidence is insufficient.
+
+# MISSING INFORMATION
+
+List the information still required before the Board should approve this proposal.
+
+Explain why each missing item matters.
+
+# BOARD DECISION
+
+Recommend one of the following:
+
+APPROVE
+
+APPROVE WITH CONDITIONS
+
+DEFER
+
+REJECT
+
+Explain why.
+
+Provide the conditions that should be met before approval.
