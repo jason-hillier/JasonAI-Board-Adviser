@@ -2,7 +2,7 @@ from decision_engine import analyse_document
 from agents.strategy_agent import analyse_strategy
 from agents.finance_agent import analyse_finance
 from decision_policy import evaluate_decision_policy
-
+from strategic_framework_engine import get_framework_guidance
 
 def run_board_orchestration(document_text: str) -> dict:
     """
@@ -18,6 +18,7 @@ def run_board_orchestration(document_text: str) -> dict:
     decision_analysis = analyse_document(document_text)
     strategy_analysis = analyse_strategy(document_text)
     finance_analysis = analyse_finance(document_text)
+    strategic_frameworks = get_framework_guidance(document_text)
     decision_policy = evaluate_decision_policy(
     document_text=document_text,
     decision_analysis=decision_analysis,
@@ -29,5 +30,6 @@ def run_board_orchestration(document_text: str) -> dict:
         "decision_analysis": decision_analysis,
         "strategy_analysis": strategy_analysis,
         "finance_analysis": finance_analysis,
+        "strategic_frameworks": strategic_frameworks,
         "decision_policy": decision_policy,
     }
