@@ -44,6 +44,7 @@ Stage 2:
 
     decision_analysis = orchestration.get("decision_analysis")
     strategy_analysis = orchestration.get("strategy_analysis")
+    finance_analysis = orchestration.get ("finance_analysis")
 
     board_framework = load_board_framework()
 
@@ -59,6 +60,9 @@ DECISION ENGINE ANALYSIS:
 
 STRATEGY AGENT ANALYSIS:
 {strategy_analysis}
+
+FINANCE AGENT ANALYSIS:
+{finance_analysis}
 
 Produce a concise, rigorous and board-ready report.
 
