@@ -1,8 +1,7 @@
 from pathlib import Path
 
+from board_orchestrator import run_board_orchestration
 from decision_engine import analyse_document
-
-from agents.strategy_agent import analyse_strategy
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 BOARD_FRAMEWORK_PATH = PROJECT_ROOT / "prompts" / "board_framework.txt"
@@ -30,22 +29,26 @@ def generate_board_intelligence(document_text: str) -> str:
     """
     Generate a board-level executive intelligence report.
 
-    Stage 1:
-        The Decision Engine performs the core strategic analysis.
+Stage 1:
+    The Board Orchestrator coordinates specialist analysis.
 
-    Stage 2:
-        The Board Framework converts that analysis into a structured
-        board-ready report.
+Stage 2:
+    The Board Framework synthesises the specialist analyses into a
+    structured, board-ready intelligence report.
     """
 
     if not document_text or not document_text.strip():
         raise ValueError("No document text was supplied.")
 
-    decision_analysis = analyse_document(document_text)
-    strategy_analysis = analyse_strategy(document_text)
+    orchestration = run_board_orchestration(document_text)
+
+    decision_analysis = orchestration.get("decision_analysis")
+    strategy_analysis = orchestration.get("strategy_analysis")
+
     board_framework = load_board_framework()
 
     final_input = f"""
+
 Apply the following Board Intelligence Framework to the Decision Engine analysis.
 
 BOARD INTELLIGENCE FRAMEWORK:
