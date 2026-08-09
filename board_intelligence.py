@@ -2,6 +2,7 @@ from pathlib import Path
 
 from decision_engine import analyse_document
 
+from agents.strategy_agent import analyse_strategy
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 BOARD_FRAMEWORK_PATH = PROJECT_ROOT / "prompts" / "board_framework.txt"
@@ -41,6 +42,7 @@ def generate_board_intelligence(document_text: str) -> str:
         raise ValueError("No document text was supplied.")
 
     decision_analysis = analyse_document(document_text)
+    strategy_analysis = analyse_strategy(document_text)
     board_framework = load_board_framework()
 
     final_input = f"""
@@ -51,6 +53,9 @@ BOARD INTELLIGENCE FRAMEWORK:
 
 DECISION ENGINE ANALYSIS:
 {decision_analysis}
+
+STRATEGY AGENT ANALYSIS:
+{strategy_analysis}
 
 Produce a concise, rigorous and board-ready report.
 
