@@ -45,6 +45,7 @@ Stage 2:
     decision_analysis = orchestration.get("decision_analysis")
     strategy_analysis = orchestration.get("strategy_analysis")
     finance_analysis = orchestration.get ("finance_analysis")
+    decision_policy = orchestration["decision_policy"]
 
     board_framework = load_board_framework()
 
@@ -64,9 +65,17 @@ STRATEGY AGENT ANALYSIS:
 FINANCE AGENT ANALYSIS:
 {finance_analysis}
 
+DECISION POLICY:
+{decision_policy["policy"]}
+
+POLICY EVIDENCE:
+{decision_policy["evidence"]}
+
 Produce a concise, rigorous and board-ready report.
 
 Requirements:
+- The final Board recommendation must comply with the Decision Policy.
+- Do not treat adverse evidence as merely missing evidence.
 - Do not invent facts.
 - Distinguish facts, assumptions and inferences.
 - Highlight missing evidence.
