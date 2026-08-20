@@ -2,6 +2,9 @@ from pathlib import Path
 
 import ollama
 
+import json
+
+from decision_models import DecisionCase, EvidenceItem, Finding, Risk
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DECISION_PROMPT_PATH = PROJECT_ROOT / "prompts" / "decision_engine.txt"
@@ -42,6 +45,7 @@ def analyse_document(
 
     response = ollama.chat(
         model=model,
+        format="json",
         messages=[
             {
                 "role": "system",
@@ -66,3 +70,109 @@ def analyse_document(
         raise RuntimeError("Ollama returned an empty response.")
 
     return output
+
+def analyse_document_structured(
+    document_text: str,
+    model: str = DEFAULT_MODEL,
+) -> dict:
+    """
+    Analyse document text and return structured decision-engine output.
+    """
+
+    if not document_text or not document_text.strip():
+        raise ValueError("No document text was supplied for analysis.")
+
+    system_prompt = load_decision_prompt()
+
+    structured_instruction = """
+Return valid JSON only.
+
+Use this exact structure:
+
+{
+  "evidence": [
+    {
+      "statement": "string",
+      "evidence_type": "FACT | ASSUMPTION | INFERENCE | GAP",
+      "materiality": "LOW | MEDIUM | HIGH",
+      "source": null,
+      "confidence": null
+    }
+  ],
+  "findings": [
+    {
+      "title": "string",
+      "description": "string",
+      "materiality": "LOW | MEDIUM | HIGH",
+      "evidence_type": "FACT | ASSUMPTION | INFERENCE | GAP",
+      "source": null
+    }
+  ],
+ "risks": [
+    {
+    "title": "string",
+    "description": "string",
+    "materiality": "LOW | MEDIUM | HIGH",
+    "likelihood": "LOW | MEDIUM | HIGH",
+    "impact": "LOW | MEDIUM | HIGH",
+    "source": null
+  }
+]
+}
+
+Do not add markdown.
+Do not add commentary outside the JSON.
+Do not invent facts.
+"""
+
+    response = ollama.chat(
+        model=model,
+        messages=[
+            {
+                "role": "system",
+                "content": system_prompt + "\n\n" + structured_instruction,
+            },
+            {
+                "role": "user",
+                "content": (
+                    "Analyse the following document using the Macian Decision Engine.\n\n"
+                    f"DOCUMENT:\n{document_text}"
+                ),
+            },
+        ],
+    )
+
+    output = response["message"]["content"].strip()
+
+    if not output:
+        raise RuntimeError("Ollama returned an empty structured response.")
+
+    decoder = json.JSONDecoder()
+    result, _ = decoder.raw_decode(output.lstrip())
+
+    evidence_items = [
+    EvidenceItem(**item)
+    for item in result.get("evidence", [])
+]
+
+    finding_items = [
+    Finding(**item)
+    for item in result.get("findings", [])
+]
+
+    risk_items = [
+    Risk(**item)
+    for item in result.get("risks", [])
+]
+
+    return DecisionCase(
+    title="Untitled Decision",
+    proposal=document_text,
+    evidence=evidence_items,
+    findings=finding_items,
+    risks=risk_items,
+    opportunities=[],
+    tradeoffs=[],
+    options=[],
+    recommendation=None,
+)

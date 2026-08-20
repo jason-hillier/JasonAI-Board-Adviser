@@ -45,6 +45,7 @@ Stage 2:
     decision_analysis = orchestration.get("decision_analysis")
     strategy_analysis = orchestration.get("strategy_analysis")
     finance_analysis = orchestration.get ("finance_analysis")
+    strategic_frameworks = orchestration["strategic_frameworks"]
     decision_policy = orchestration["decision_policy"]
 
     board_framework = load_board_framework()
@@ -64,6 +65,51 @@ STRATEGY AGENT ANALYSIS:
 
 FINANCE AGENT ANALYSIS:
 {finance_analysis}
+
+SELECTED STRATEGIC FRAMEWORKS:
+{strategic_frameworks}
+
+Apply these frameworks selectively to challenge the proposal.
+Do not merely describe or name the frameworks.
+Use them to identify decision-relevant implications, contradictions,
+alternatives, opportunity costs and strategic risks.
+
+CROSS-AGENT CHALLENGE:
+
+Do not simply aggregate or summarise the agent analyses.
+
+Identify where the Strategy Agent, Finance Agent and Decision Engine:
+- agree and reinforce one another;
+- disagree or reach conflicting conclusions;
+- rely on different assumptions;
+- identify evidence of different strength or quality.
+
+Where analyses conflict, adjudicate between them using the available
+evidence and explain which conclusion should carry greater weight and why.
+
+Identify any material issue that has been overlooked by all agents.
+
+DECISION OPTIONS:
+
+Do not treat the decision as simply approve versus reject.
+
+Where appropriate, identify credible alternative courses of action,
+including defer, pilot, phase, redesign, renegotiate, competitively tender,
+or approve subject to explicit conditions.
+
+For each credible option, consider:
+- strategic value;
+- financial exposure;
+- reversibility;
+- opportunity cost;
+- execution risk;
+- evidence required before further commitment.
+
+Prefer staged or reversible decisions where uncertainty is high and
+additional evidence can be obtained at reasonable cost.
+
+The Board recommendation must identify the preferred course of action
+and explain why it is superior to the principal alternatives.
 
 DECISION POLICY:
 {decision_policy["policy"]}
