@@ -65,6 +65,12 @@ class Recommendation:
     decision: str
     rationale: str
     confidence: Literal["LOW", "MODERATE", "HIGH"]
+    decision_status: Literal[
+        "PROCEED",
+        "PROCEED_WITH_CONDITIONS",
+        "DEFER",
+        "REJECT",
+    ]
     conditions: Optional[str] = None
     evidence_gaps: Optional[str] = None
 
