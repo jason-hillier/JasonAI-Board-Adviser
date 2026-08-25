@@ -4,7 +4,7 @@ import ollama
 
 import json
 
-from decision_models import DecisionCase, EvidenceItem, Finding, Risk
+from decision_models import DecisionCase, EvidenceItem, Finding, Risk, Opportunity, TradeOff, DecisionOption
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DECISION_PROMPT_PATH = PROJECT_ROOT / "prompts" / "decision_engine.txt"
@@ -108,16 +108,47 @@ Use this exact structure:
       "source": null
     }
   ],
- "risks": [
+  "risks": [
     {
-    "title": "string",
-    "description": "string",
-    "materiality": "LOW | MEDIUM | HIGH",
-    "likelihood": "LOW | MEDIUM | HIGH",
-    "impact": "LOW | MEDIUM | HIGH",
-    "source": null
-  }
-]
+      "title": "string",
+      "description": "string",
+      "materiality": "LOW | MEDIUM | HIGH",
+      "likelihood": "LOW | MEDIUM | HIGH",
+      "impact": "LOW | MEDIUM | HIGH",
+      "source": null
+    }
+  ],
+  "opportunities": [
+    {
+      "title": "string",
+      "description": "string",
+      "materiality": "LOW | MEDIUM | HIGH",
+      "strategic_value": "LOW | MEDIUM | HIGH",
+      "evidence_type": "FACT | ASSUMPTION | INFERENCE | GAP",
+      "source": null
+    }
+  ],
+  "tradeoffs": [
+    {
+      "title": "string",
+      "description": "string",
+      "benefit": "string",
+      "cost": "string",
+      "materiality": "LOW | MEDIUM | HIGH"
+    }
+  ],
+  "options": [
+    {
+      "name": "string",
+      "description": "string",
+      "strategic_value": "LOW | MEDIUM | HIGH",
+      "downside_exposure": "LOW | MEDIUM | HIGH",
+      "reversibility": "LOW | MEDIUM | HIGH",
+      "execution_risk": "LOW | MEDIUM | HIGH",
+      "opportunity_cost": "LOW | MEDIUM | HIGH",
+      "evidence_required": null
+    }
+  ]
 }
 
 Do not add markdown.
@@ -151,28 +182,49 @@ Do not invent facts.
     result, _ = decoder.raw_decode(output.lstrip())
 
     evidence_items = [
-    EvidenceItem(**item)
-    for item in result.get("evidence", [])
-]
+        EvidenceItem(**item)
+        for item in result.get("evidence", [])
+    ]
 
     finding_items = [
-    Finding(**item)
-    for item in result.get("findings", [])
-]
+        Finding(**item)
+        for item in result.get("findings", [])
+    ]
 
     risk_items = [
-    Risk(**item)
-    for item in result.get("risks", [])
-]
+        Risk(**item)
+        for item in result.get("risks", [])
+    ]
+
+    opportunity_items = [
+        Opportunity(**item)
+        for item in result.get("opportunities", [])
+    ]
+
+    tradeoff_items = [
+        TradeOff(
+            title=item.get("title", "Untitled Trade-Off"),
+            description=item.get("description", ""),
+            benefit=item.get("benefit", ""),
+            cost=item.get("cost", ""),
+            materiality=item.get("materiality", "MEDIUM"),
+        )
+        for item in result.get("tradeoffs", [])
+   ]
+
+    option_items = [
+        DecisionOption(**item)
+        for item in result.get("options", [])
+  ]
 
     return DecisionCase(
-    title="Untitled Decision",
-    proposal=document_text,
-    evidence=evidence_items,
-    findings=finding_items,
-    risks=risk_items,
-    opportunities=[],
-    tradeoffs=[],
-    options=[],
-    recommendation=None,
-)
+        title="Untitled Decision",
+        proposal=document_text,
+        evidence=evidence_items,
+        findings=finding_items,
+        risks=risk_items,
+        opportunities=opportunity_items,
+        tradeoffs=tradeoff_items,
+        options=option_items,
+        recommendation=None,
+    )

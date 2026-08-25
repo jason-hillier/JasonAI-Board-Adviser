@@ -49,7 +49,7 @@ class Opportunity:
     description: str
     materiality: Materiality
     strategic_value: Materiality
-    evidence_type: EvidenceType
+    evidence_type: Optional[EvidenceType] = None
     source: Optional[str] = None
 
 @dataclass
