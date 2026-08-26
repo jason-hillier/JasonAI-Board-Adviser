@@ -213,9 +213,18 @@ Do not invent facts.
    ]
 
     option_items = [
-        DecisionOption(**item)
-        for item in result.get("options", [])
-  ]
+    DecisionOption(
+        name=item.get("name", "Untitled Option"),
+        description=item.get("description", ""),
+        strategic_value=item.get("strategic_value", "MEDIUM"),
+        downside_exposure=item.get("downside_exposure", "MEDIUM"),
+        reversibility=item.get("reversibility", "MEDIUM"),
+        execution_risk=item.get("execution_risk", "MEDIUM"),
+        opportunity_cost=item.get("opportunity_cost", "MEDIUM"),
+        evidence_required=item.get("evidence_required"),
+    )
+    for item in result.get("options", [])
+]
 
     return DecisionCase(
         title="Untitled Decision",

@@ -1,5 +1,16 @@
 from decision_models import DecisionCase, Recommendation
+
 def build_recommendation(case: DecisionCase) -> Recommendation:
+    if not case.evidence:
+        return Recommendation(
+            decision="Defer pending sufficient evidence.",
+            rationale="The decision case contains no supporting evidence, so the proposal cannot be assessed reliably.",
+            confidence="HIGH",
+            decision_status="DEFER",
+            conditions="Provide sufficient evidence to support evaluation of the proposal.",
+            evidence_gaps="The case currently contains no supporting evidence.",
+        )
+
     high_risks = [
         risk for risk in case.risks
         if risk.materiality == "HIGH"
