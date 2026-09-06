@@ -84,16 +84,17 @@ def assess_strategy(
                 pass
 
     if material_negative_variances:
-        return StrategicAssessment(
+                if objective.strategic_priority == "HIGH":
+                        return StrategicAssessment(
             objective=objective,
             trajectory="OFF_TRACK",
             diagnosis=(
                 "Operational performance is materially below the stated "
-                "strategic target."
+                "strategic target on a high-priority objective."
             ),
             strategic_impact=(
-                "Current performance materially threatens delivery of the "
-                "strategic objective."
+                "Current performance materially threatens delivery of a "
+                "high-priority strategic objective."
             ),
             root_cause=None,
             intervention=(
@@ -102,6 +103,25 @@ def assess_strategy(
             ),
             confidence="HIGH",
         )
+
+                return StrategicAssessment(
+        objective=objective,
+        trajectory="AT_RISK",
+        diagnosis=(
+            "Operational performance is materially below target, but the "
+            "objective is not currently classified as high strategic priority."
+        ),
+        strategic_impact=(
+            "The objective requires management attention, but the current "
+            "variance does not yet constitute a critical strategic failure."
+        ),
+        root_cause=None,
+        intervention=(
+            "Review performance drivers and determine proportionate "
+            "corrective action."
+        ),
+        confidence="MODERATE",
+    )
 
     if positive_variances:
         return StrategicAssessment(
