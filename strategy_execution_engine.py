@@ -37,6 +37,7 @@ class OperationalEvidence:
 
     trend: Optional[Literal["IMPROVING", "STABLE", "DETERIORATING"]] = None
     confidence: Optional[Literal["HIGH", "MODERATE", "LOW"]] = None
+    materiality: Optional[Literal["CRITICAL", "HIGH", "MODERATE", "LOW"]] = None
 @dataclass
 class StrategicAssessment:
     objective: StrategicObjective
@@ -151,20 +152,40 @@ def assess_strategy(
     # Material underperformance requires contextual judgement.
     if material_negative_variances:
 
-        improving_variances = [
+        materiality_levels = {
+            None: 2,
+            "LOW": 1,
+            "MODERATE": 2,
+            "HIGH": 3,
+            "CRITICAL": 4,
+        }
+
+        highest_materiality = max(
+            materiality_levels.get(item.materiality, 2)
+            for item in material_negative_variances
+        )
+
+        decision_variances = [
             item
             for item in material_negative_variances
+            if materiality_levels.get(item.materiality, 2)
+            == highest_materiality
+        ]
+
+        improving_variances = [
+            item
+            for item in decision_variances
             if item.trend == "IMPROVING"
         ]
 
         deteriorating_variances = [
             item
-            for item in material_negative_variances
+            for item in decision_variances
             if item.trend == "DETERIORATING"
         ]
 
-        # Deteriorating material evidence overrides improving evidence
-        # on a high-priority strategic objective.
+        # Deteriorating evidence at the highest materiality level
+        # dominates improving lower-materiality indicators.
         if (
             deteriorating_variances
             and objective.strategic_priority == "HIGH"
@@ -173,38 +194,39 @@ def assess_strategy(
                 objective=objective,
                 trajectory="OFF_TRACK",
                 diagnosis=(
-                    "Material underperformance includes deteriorating indicators "
-                    "on a high-priority strategic objective."
+                    "The highest-materiality operational evidence includes "
+                    "deteriorating performance on a high-priority objective."
                 ),
                 strategic_impact=(
-                    "The deteriorating evidence materially threatens delivery "
-                    "of the strategic objective despite improvement elsewhere."
+                    "The most strategically significant evidence materially "
+                    "threatens delivery of the objective."
                 ),
                 root_cause=None,
                 intervention=(
-                    "Escalate deteriorating performance drivers, identify the "
-                    "underlying causes, and define corrective actions."
+                    "Escalate the highest-materiality deteriorating drivers, "
+                    "identify root causes, and define corrective actions."
                 ),
                 confidence=_assessment_confidence(evidence, "HIGH"),
             )
 
-        # Materially behind, but all material indicators are demonstrably recovering.
+        # If the highest-materiality evidence is improving, retain
+        # the objective as at risk rather than off track.
         if improving_variances:
             return StrategicAssessment(
                 objective=objective,
                 trajectory="AT_RISK",
                 diagnosis=(
-                    "Operational performance remains materially below target, "
-                    "but the direction of travel is improving."
+                    "Performance remains materially below target, but the "
+                    "highest-materiality evidence is improving."
                 ),
                 strategic_impact=(
-                    "The strategic objective remains exposed, but improving "
-                    "performance reduces the immediate risk of strategic failure."
+                    "The objective remains exposed, although the most "
+                    "strategically significant indicators are recovering."
                 ),
                 root_cause=None,
                 intervention=(
-                    "Continue corrective actions and monitor whether the improving "
-                    "trajectory is sufficient to recover the strategic objective."
+                    "Continue corrective actions and monitor whether recovery "
+                    "is sufficient to restore the strategic trajectory."
                 ),
                 confidence=_assessment_confidence(evidence, "MODERATE"),
             )

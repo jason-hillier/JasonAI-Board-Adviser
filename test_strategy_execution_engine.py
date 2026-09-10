@@ -350,3 +350,72 @@ def test_multiple_high_confidence_signals_outweigh_single_low_confidence_signal(
 
     assert assessment.trajectory == "OFF_TRACK"
     assert assessment.confidence == "HIGH"
+
+def test_critical_materiality_deterioration_drives_off_track_assessment():
+    objective = StrategicObjective(
+        name="Grow UK originations profitably",
+        description="Increase originations while maintaining sustainable margin.",
+        target="15% profitable growth",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="FINANCIAL_PERFORMANCE",
+            metric="Net margin",
+            actual="12%",
+            target="30%",
+            variance="-18%",
+            period="YTD",
+            source="Management Accounts",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="CRITICAL",
+        )
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+
+    assert assessment.trajectory == "OFF_TRACK"
+    assert assessment.confidence == "HIGH"
+
+def test_critical_improving_signal_outweighs_low_materiality_deterioration():
+    objective = StrategicObjective(
+        name="Grow UK originations profitably",
+        description="Increase originations while protecting sustainable profitability.",
+        target="15% profitable growth",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="OPERATIONAL_PERFORMANCE",
+            metric="Manual processing rate",
+            actual="35%",
+            target="20%",
+            variance="-15%",
+            period="YTD",
+            source="Operational MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="LOW",
+        ),
+        OperationalEvidence(
+            domain="FINANCIAL_PERFORMANCE",
+            metric="Net margin",
+            actual="18%",
+            target="30%",
+            variance="-12%",
+            period="YTD",
+            source="Management Accounts",
+            trend="IMPROVING",
+            confidence="HIGH",
+            materiality="CRITICAL",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+
+    assert assessment.trajectory == "AT_RISK"
