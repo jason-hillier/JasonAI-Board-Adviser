@@ -128,6 +128,25 @@ def _infer_root_cause(
         )
     )
 
+    resource_dependency = (
+        (
+            "single person dependency" in metrics
+            or "single-person dependency" in metrics
+            or "key person dependency" in metrics
+            or "resource availability" in metrics
+            or "resource dependency" in metrics
+        )
+        and (
+            "delay" in metrics
+            or "milestone" in metrics
+            or "dependency" in metrics
+            or "availability" in metrics
+        )
+    )
+
+    if resource_dependency:
+        return "RESOURCE_DEPENDENCY"
+
     if approval_constraint and broker_constraint:
         return "PROCESS_CAPACITY_CONSTRAINT"
 
@@ -147,6 +166,13 @@ def _root_cause_intervention(
             "Address process and capacity constraints across approval and "
             "broker activation, identify bottlenecks and single-person "
             "dependencies, and rebalance capacity against strategic demand."
+        )
+
+    if root_cause == "RESOURCE_DEPENDENCY":
+        return (
+            "Remove critical resource dependencies by increasing capacity, "
+            "cross-training key activities, assigning deputies, and rebalancing "
+            "resource demand across competing strategic priorities."
         )
 
     return (

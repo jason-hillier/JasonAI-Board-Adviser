@@ -461,3 +461,45 @@ def test_process_bottleneck_root_cause_and_targeted_intervention():
     assert assessment.trajectory == "OFF_TRACK"
     assert assessment.root_cause == "PROCESS_CAPACITY_CONSTRAINT"
     assert "capacity" in assessment.intervention.lower()
+
+def test_resource_dependency_root_cause_and_targeted_intervention():
+    objective = StrategicObjective(
+        name="Deliver strategic transformation roadmap",
+        description="Deliver critical transformation milestones to plan.",
+        target="100% critical milestones delivered",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="RESOURCE_CAPACITY",
+            metric="Single person dependency",
+            actual="Critical dependency exists",
+            target="No critical single person dependencies",
+            variance="-15%",
+            period="Current",
+            source="Programme Resource Assessment",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="CRITICAL",
+        ),
+        OperationalEvidence(
+            domain="DELIVERY_PERFORMANCE",
+            metric="Milestones delayed by resource availability",
+            actual="4 critical milestones delayed",
+            target="0 critical milestones delayed",
+            variance="-20%",
+            period="Current",
+            source="Programme MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="HIGH",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+
+    assert assessment.trajectory == "OFF_TRACK"
+    assert assessment.root_cause == "RESOURCE_DEPENDENCY"
+    assert "resource" in assessment.intervention.lower()
