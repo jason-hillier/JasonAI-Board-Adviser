@@ -110,6 +110,11 @@ def _infer_root_cause(
         for item in evidence
     )
 
+    domains = " ".join(
+        item.domain.lower()
+        for item in evidence
+    )
+
     approval_constraint = (
         "approval" in metrics
         and (
@@ -144,6 +149,26 @@ def _infer_root_cause(
         )
     )
 
+    technology_delivery_constraint = (
+        (
+            "technology" in domains
+            or "technology" in metrics
+            or "system" in metrics
+            or "platform" in metrics
+            or "integration" in metrics
+        )
+        and (
+            "defect" in metrics
+            or "integration" in metrics
+            or "readiness" in metrics
+            or "delay" in metrics
+            or "unresolved" in metrics
+        )
+    )
+
+    if technology_delivery_constraint:
+        return "TECHNOLOGY_DELIVERY_CONSTRAINT"
+
     if resource_dependency:
         return "RESOURCE_DEPENDENCY"
 
@@ -173,6 +198,13 @@ def _root_cause_intervention(
             "Remove critical resource dependencies by increasing capacity, "
             "cross-training key activities, assigning deputies, and rebalancing "
             "resource demand across competing strategic priorities."
+        )
+
+    if root_cause == "TECHNOLOGY_DELIVERY_CONSTRAINT":
+        return (
+            "Escalate technology delivery constraints, prioritise critical defects "
+            "and integration readiness, confirm recovery ownership, and align "
+            "technology capacity to the strategic delivery milestones."
         )
 
     return (

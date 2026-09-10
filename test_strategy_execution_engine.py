@@ -503,3 +503,45 @@ def test_resource_dependency_root_cause_and_targeted_intervention():
     assert assessment.trajectory == "OFF_TRACK"
     assert assessment.root_cause == "RESOURCE_DEPENDENCY"
     assert "resource" in assessment.intervention.lower()
+
+def test_technology_delivery_constraint_root_cause_and_intervention():
+    objective = StrategicObjective(
+        name="Deliver new asset finance platform",
+        description="Implement the strategic technology platform and enable business transition.",
+        target="Platform delivered to agreed readiness milestones",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="TECHNOLOGY_DELIVERY",
+            metric="Critical system defects unresolved",
+            actual="12 critical defects open",
+            target="0 critical defects open",
+            variance="-20%",
+            period="Current",
+            source="Technology Delivery MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="CRITICAL",
+        ),
+        OperationalEvidence(
+            domain="TECHNOLOGY_DELIVERY",
+            metric="Integration readiness delayed",
+            actual="2 critical integrations not ready",
+            target="All critical integrations ready",
+            variance="-15%",
+            period="Current",
+            source="Integration Readiness Assessment",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="HIGH",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+
+    assert assessment.trajectory == "OFF_TRACK"
+    assert assessment.root_cause == "TECHNOLOGY_DELIVERY_CONSTRAINT"
+    assert "technology" in assessment.intervention.lower()
