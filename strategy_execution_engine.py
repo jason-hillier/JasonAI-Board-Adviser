@@ -179,6 +179,24 @@ def _infer_root_cause(
         )
     )
 
+    demand_weakness = any(
+        (
+            (
+                "market_demand" in item.domain.lower()
+                or "market demand" in item.domain.lower()
+                or "qualified opportunity" in item.metric.lower()
+                or "pipeline" in item.metric.lower()
+            )
+            and item.variance
+            and item.variance.strip().startswith("-")
+            and item.trend == "DETERIORATING"
+        )
+        for item in evidence
+    )
+
+    if demand_weakness:
+        return "DEMAND_WEAKNESS"
+
     if commercial_conversion_weakness:
         return "COMMERCIAL_CONVERSION_WEAKNESS"
 
@@ -228,6 +246,13 @@ def _root_cause_intervention(
             "Address conversion weakness across the commercial funnel, identify "
             "drop-off points between quote, approval and payout, review proposition "
             "competitiveness and sales execution, and assign targeted recovery actions."
+        )
+
+    if root_cause == "DEMAND_WEAKNESS":
+        return (
+            "Address the demand shortfall by reviewing market conditions, target "
+            "segments, broker and channel activity, proposition competitiveness, "
+            "and the volume and quality of opportunities entering the pipeline."
         )
 
     return (

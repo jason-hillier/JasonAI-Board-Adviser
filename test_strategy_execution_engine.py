@@ -599,3 +599,57 @@ def test_commercial_conversion_weakness_root_cause_and_intervention():
     assert assessment.trajectory == "OFF_TRACK"
     assert assessment.root_cause == "COMMERCIAL_CONVERSION_WEAKNESS"
     assert "conversion" in assessment.intervention.lower()
+
+def test_demand_weakness_root_cause_and_intervention():
+    objective = StrategicObjective(
+        name="Grow UK originations",
+        description="Increase profitable UK equipment finance originations.",
+        target="15% growth",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="MARKET_DEMAND",
+            metric="Qualified opportunity volume",
+            actual="70%",
+            target="100%",
+            variance="-30%",
+            period="YTD",
+            source="Sales Pipeline MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="CRITICAL",
+        ),
+        OperationalEvidence(
+            domain="MARKET_DEMAND",
+            metric="New qualified opportunities",
+            actual="75%",
+            target="100%",
+            variance="-25%",
+            period="YTD",
+            source="Sales Pipeline MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="HIGH",
+        ),
+        OperationalEvidence(
+            domain="COMMERCIAL_PERFORMANCE",
+            metric="Approval to payout conversion rate",
+            actual="72%",
+            target="70%",
+            variance="+2%",
+            period="YTD",
+            source="Commercial MI",
+            trend="STABLE",
+            confidence="HIGH",
+            materiality="HIGH",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+
+    assert assessment.trajectory == "OFF_TRACK"
+    assert assessment.root_cause == "DEMAND_WEAKNESS"
+    assert "demand" in assessment.intervention.lower()
