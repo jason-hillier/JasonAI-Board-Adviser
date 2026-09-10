@@ -106,7 +106,38 @@ def assess_strategy(
             if item.trend == "IMPROVING"
         ]
 
-        # Materially behind, but demonstrably recovering.
+        deteriorating_variances = [
+            item
+            for item in material_negative_variances
+            if item.trend == "DETERIORATING"
+        ]
+
+        # Deteriorating material evidence overrides improving evidence
+        # on a high-priority strategic objective.
+        if (
+            deteriorating_variances
+            and objective.strategic_priority == "HIGH"
+        ):
+            return StrategicAssessment(
+                objective=objective,
+                trajectory="OFF_TRACK",
+                diagnosis=(
+                    "Material underperformance includes deteriorating indicators "
+                    "on a high-priority strategic objective."
+                ),
+                strategic_impact=(
+                    "The deteriorating evidence materially threatens delivery "
+                    "of the strategic objective despite improvement elsewhere."
+                ),
+                root_cause=None,
+                intervention=(
+                    "Escalate deteriorating performance drivers, identify the "
+                    "underlying causes, and define corrective actions."
+                ),
+                confidence="HIGH",
+            )
+
+        # Materially behind, but all material indicators are demonstrably recovering.
         if improving_variances:
             return StrategicAssessment(
                 objective=objective,
