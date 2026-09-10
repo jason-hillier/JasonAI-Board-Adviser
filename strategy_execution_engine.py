@@ -52,8 +52,15 @@ def _assessment_confidence(
     default: str,
 ) -> str:
     """
-    Prevent the strategic assessment from expressing greater
-    confidence than the underlying evidence supports.
+    Aggregate confidence across the available evidence.
+
+    Explicit evidence confidence is scored as:
+        LOW = 1
+        MODERATE = 2
+        HIGH = 3
+
+    The aggregate evidence confidence cannot increase the
+    confidence inherent in the strategic assessment rule.
     """
     levels = {
         "LOW": 1,
@@ -61,24 +68,33 @@ def _assessment_confidence(
         "HIGH": 3,
     }
 
-    evidence_levels = [
-        item.confidence
+    explicit_scores = [
+        levels[item.confidence]
         for item in evidence
         if item.confidence in levels
     ]
 
-    if not evidence_levels:
+    # Preserve legacy/default behaviour where evidence has
+    # not been explicitly confidence-rated.
+    if not explicit_scores:
         return default
 
-    weakest_evidence = min(
-        evidence_levels,
-        key=lambda level: levels[level],
+    average_score = sum(explicit_scores) / len(explicit_scores)
+
+    if average_score >= 2.5:
+        aggregate = "HIGH"
+    elif average_score >= 1.5:
+        aggregate = "MODERATE"
+    else:
+        aggregate = "LOW"
+
+    # Evidence quality may reduce confidence, but it should
+    # never inflate the confidence of the underlying rule.
+    return (
+        aggregate
+        if levels[aggregate] < levels[default]
+        else default
     )
-
-    if levels[weakest_evidence] < levels[default]:
-        return weakest_evidence
-
-    return default
 
 
 def assess_strategy(

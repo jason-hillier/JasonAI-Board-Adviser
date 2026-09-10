@@ -289,3 +289,64 @@ def test_low_confidence_evidence_reduces_assessment_confidence():
 
     assert assessment.trajectory == "OFF_TRACK"
     assert assessment.confidence == "LOW"
+
+def test_multiple_high_confidence_signals_outweigh_single_low_confidence_signal():
+    objective = StrategicObjective(
+        name="Improve UK business performance",
+        description="Deliver sustainable growth and profitability.",
+        target="15% improvement",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="FINANCIAL_PERFORMANCE",
+            metric="Originations growth",
+            actual="2%",
+            target="15%",
+            variance="-13%",
+            period="YTD",
+            source="Management Accounts",
+            trend="DETERIORATING",
+            confidence="HIGH",
+        ),
+        OperationalEvidence(
+            domain="FINANCIAL_PERFORMANCE",
+            metric="Margin",
+            actual="10%",
+            target="25%",
+            variance="-15%",
+            period="YTD",
+            source="Management Accounts",
+            trend="DETERIORATING",
+            confidence="HIGH",
+        ),
+        OperationalEvidence(
+            domain="OPERATIONAL_PERFORMANCE",
+            metric="Processing efficiency",
+            actual="70%",
+            target="85%",
+            variance="-15%",
+            period="YTD",
+            source="Operational MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+        ),
+        OperationalEvidence(
+            domain="MANAGEMENT_SENTIMENT",
+            metric="Management outlook",
+            actual="Improving",
+            target="Positive",
+            variance="+5%",
+            period="Current",
+            source="Management Commentary",
+            trend="IMPROVING",
+            confidence="LOW",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+
+    assert assessment.trajectory == "OFF_TRACK"
+    assert assessment.confidence == "HIGH"
