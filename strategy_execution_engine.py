@@ -36,6 +36,7 @@ class OperationalEvidence:
     source: Optional[str] = None
 
     trend: Optional[Literal["IMPROVING", "STABLE", "DETERIORATING"]] = None
+    confidence: Optional[Literal["HIGH", "MODERATE", "LOW"]] = None
 @dataclass
 class StrategicAssessment:
     objective: StrategicObjective
@@ -45,6 +46,40 @@ class StrategicAssessment:
     root_cause: Optional[str] = None
     intervention: Optional[str] = None
     confidence: Literal["LOW", "MODERATE", "HIGH"] = "MODERATE"
+
+def _assessment_confidence(
+    evidence: list[OperationalEvidence],
+    default: str,
+) -> str:
+    """
+    Prevent the strategic assessment from expressing greater
+    confidence than the underlying evidence supports.
+    """
+    levels = {
+        "LOW": 1,
+        "MODERATE": 2,
+        "HIGH": 3,
+    }
+
+    evidence_levels = [
+        item.confidence
+        for item in evidence
+        if item.confidence in levels
+    ]
+
+    if not evidence_levels:
+        return default
+
+    weakest_evidence = min(
+        evidence_levels,
+        key=lambda level: levels[level],
+    )
+
+    if levels[weakest_evidence] < levels[default]:
+        return weakest_evidence
+
+    return default
+
 
 def assess_strategy(
     objective: StrategicObjective,
@@ -67,7 +102,7 @@ def assess_strategy(
             intervention=(
                 "Provide relevant operational evidence against the strategic objective."
             ),
-            confidence="HIGH",
+            confidence=_assessment_confidence(evidence, "HIGH"),
         )
 
     positive_variances = [
@@ -134,7 +169,7 @@ def assess_strategy(
                     "Escalate deteriorating performance drivers, identify the "
                     "underlying causes, and define corrective actions."
                 ),
-                confidence="HIGH",
+                confidence=_assessment_confidence(evidence, "HIGH"),
             )
 
         # Materially behind, but all material indicators are demonstrably recovering.
@@ -155,7 +190,7 @@ def assess_strategy(
                     "Continue corrective actions and monitor whether the improving "
                     "trajectory is sufficient to recover the strategic objective."
                 ),
-                confidence="MODERATE",
+                confidence=_assessment_confidence(evidence, "MODERATE"),
             )
 
         # Material underperformance against a high-priority objective.
@@ -176,7 +211,7 @@ def assess_strategy(
                     "Escalate for management intervention, identify the principal "
                     "performance drivers, and define corrective actions."
                 ),
-                confidence="HIGH",
+                confidence=_assessment_confidence(evidence, "HIGH"),
             )
 
         # Material variance on a lower-priority objective.
@@ -196,7 +231,7 @@ def assess_strategy(
                 "Review performance drivers and determine proportionate "
                 "corrective action."
             ),
-            confidence="MODERATE",
+            confidence=_assessment_confidence(evidence, "MODERATE"),
         )
 
     # Positive performance and no material downside.
@@ -213,7 +248,7 @@ def assess_strategy(
             ),
             root_cause=None,
             intervention=None,
-            confidence="MODERATE",
+            confidence=_assessment_confidence(evidence, "MODERATE"),
         )
 
     # Default: some evidence exists, but it does not demonstrate
@@ -234,5 +269,5 @@ def assess_strategy(
             "Review performance drivers and determine whether corrective "
             "action is required."
         ),
-        confidence="MODERATE",
+        confidence=_assessment_confidence(evidence, "MODERATE"),
     )

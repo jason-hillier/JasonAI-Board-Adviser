@@ -261,3 +261,31 @@ def test_mixed_material_trends_deteriorating_overrides_improving():
     assessment = assess_strategy(objective, evidence)
 
     assert assessment.trajectory == "OFF_TRACK"
+
+def test_low_confidence_evidence_reduces_assessment_confidence():
+    objective = StrategicObjective(
+        name="Grow UK originations",
+        description="Increase UK equipment finance originations.",
+        target="15% growth",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="FINANCIAL_PERFORMANCE",
+            metric="Originations growth",
+            actual="2%",
+            target="15%",
+            variance="-13%",
+            period="YTD",
+            source="Unverified management estimate",
+            trend="DETERIORATING",
+            confidence="LOW",
+        )
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+
+    assert assessment.trajectory == "OFF_TRACK"
+    assert assessment.confidence == "LOW"
