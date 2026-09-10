@@ -166,6 +166,22 @@ def _infer_root_cause(
         )
     )
 
+    commercial_conversion_weakness = (
+        (
+            "conversion" in metrics
+            or "quote to approval" in metrics
+            or "approval to payout" in metrics
+        )
+        and (
+            "commercial" in domains
+            or "sales" in domains
+            or "conversion" in metrics
+        )
+    )
+
+    if commercial_conversion_weakness:
+        return "COMMERCIAL_CONVERSION_WEAKNESS"
+
     if technology_delivery_constraint:
         return "TECHNOLOGY_DELIVERY_CONSTRAINT"
 
@@ -205,6 +221,13 @@ def _root_cause_intervention(
             "Escalate technology delivery constraints, prioritise critical defects "
             "and integration readiness, confirm recovery ownership, and align "
             "technology capacity to the strategic delivery milestones."
+        )
+
+    if root_cause == "COMMERCIAL_CONVERSION_WEAKNESS":
+        return (
+            "Address conversion weakness across the commercial funnel, identify "
+            "drop-off points between quote, approval and payout, review proposition "
+            "competitiveness and sales execution, and assign targeted recovery actions."
         )
 
     return (

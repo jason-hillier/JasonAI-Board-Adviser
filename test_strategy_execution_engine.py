@@ -545,3 +545,57 @@ def test_technology_delivery_constraint_root_cause_and_intervention():
     assert assessment.trajectory == "OFF_TRACK"
     assert assessment.root_cause == "TECHNOLOGY_DELIVERY_CONSTRAINT"
     assert "technology" in assessment.intervention.lower()
+
+def test_commercial_conversion_weakness_root_cause_and_intervention():
+    objective = StrategicObjective(
+        name="Grow UK originations",
+        description="Increase profitable UK equipment finance originations.",
+        target="15% growth",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="COMMERCIAL_PERFORMANCE",
+            metric="Quote to approval conversion rate",
+            actual="42%",
+            target="60%",
+            variance="-18%",
+            period="YTD",
+            source="Commercial MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="CRITICAL",
+        ),
+        OperationalEvidence(
+            domain="COMMERCIAL_PERFORMANCE",
+            metric="Approval to payout conversion rate",
+            actual="55%",
+            target="70%",
+            variance="-15%",
+            period="YTD",
+            source="Commercial MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="HIGH",
+        ),
+        OperationalEvidence(
+            domain="MARKET_DEMAND",
+            metric="Qualified opportunity volume",
+            actual="105%",
+            target="100%",
+            variance="+5%",
+            period="YTD",
+            source="Sales Pipeline MI",
+            trend="STABLE",
+            confidence="HIGH",
+            materiality="HIGH",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+
+    assert assessment.trajectory == "OFF_TRACK"
+    assert assessment.root_cause == "COMMERCIAL_CONVERSION_WEAKNESS"
+    assert "conversion" in assessment.intervention.lower()
