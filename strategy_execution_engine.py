@@ -98,6 +98,63 @@ def _assessment_confidence(
     )
 
 
+def _infer_root_cause(
+    evidence: list[OperationalEvidence],
+) -> Optional[str]:
+    """
+    Infer a small set of explainable strategic root-cause patterns
+    from operational evidence.
+    """
+    metrics = " ".join(
+        item.metric.lower()
+        for item in evidence
+    )
+
+    approval_constraint = (
+        "approval" in metrics
+        and (
+            "turnaround" in metrics
+            or "lead time" in metrics
+            or "delay" in metrics
+        )
+    )
+
+    broker_constraint = (
+        "broker" in metrics
+        and (
+            "activation" in metrics
+            or "onboarding" in metrics
+            or "lead time" in metrics
+        )
+    )
+
+    if approval_constraint and broker_constraint:
+        return "PROCESS_CAPACITY_CONSTRAINT"
+
+    return None
+
+
+def _root_cause_intervention(
+    evidence: list[OperationalEvidence],
+) -> str:
+    """
+    Select an intervention appropriate to the inferred root cause.
+    """
+    root_cause = _infer_root_cause(evidence)
+
+    if root_cause == "PROCESS_CAPACITY_CONSTRAINT":
+        return (
+            "Address process and capacity constraints across approval and "
+            "broker activation, identify bottlenecks and single-person "
+            "dependencies, and rebalance capacity against strategic demand."
+        )
+
+    return (
+        "Escalate the highest-materiality deteriorating drivers, "
+        "identify root causes, and define corrective actions."
+    )
+
+
 def assess_strategy(
     objective: StrategicObjective,
     evidence: list[OperationalEvidence],
@@ -201,11 +258,8 @@ def assess_strategy(
                     "The most strategically significant evidence materially "
                     "threatens delivery of the objective."
                 ),
-                root_cause=None,
-                intervention=(
-                    "Escalate the highest-materiality deteriorating drivers, "
-                    "identify root causes, and define corrective actions."
-                ),
+                root_cause=_infer_root_cause(evidence),
+                intervention=_root_cause_intervention(evidence),
                 confidence=_assessment_confidence(evidence, "HIGH"),
             )
 

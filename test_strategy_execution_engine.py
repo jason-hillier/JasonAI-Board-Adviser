@@ -419,3 +419,45 @@ def test_critical_improving_signal_outweighs_low_materiality_deterioration():
     assessment = assess_strategy(objective, evidence)
 
     assert assessment.trajectory == "AT_RISK"
+
+def test_process_bottleneck_root_cause_and_targeted_intervention():
+    objective = StrategicObjective(
+        name="Grow UK originations",
+        description="Increase UK equipment finance originations.",
+        target="15% growth",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="OPERATIONAL_PERFORMANCE",
+            metric="Approval turnaround time",
+            actual="5 days",
+            target="2 days",
+            variance="-15%",
+            period="YTD",
+            source="Operational MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="CRITICAL",
+        ),
+        OperationalEvidence(
+            domain="DISTRIBUTION",
+            metric="Broker activation lead time",
+            actual="8 weeks",
+            target="4 weeks",
+            variance="-12%",
+            period="YTD",
+            source="Broker MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="HIGH",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+
+    assert assessment.trajectory == "OFF_TRACK"
+    assert assessment.root_cause == "PROCESS_CAPACITY_CONSTRAINT"
+    assert "capacity" in assessment.intervention.lower()
