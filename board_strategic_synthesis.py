@@ -153,6 +153,49 @@ def _build_evidence_rationale(
 
 
 
+def _build_board_decision(
+    primary_cause: Optional[str],
+    intervention: Optional[str],
+) -> str:
+    """
+    Convert a strategic intervention into an explicit,
+    action-oriented Board approval request.
+    """
+
+    decisions = {
+        "RESOURCE_DEPENDENCY": (
+            "Approve executive action to remove critical resource "
+            "dependencies, including additional capacity, named deputies "
+            "and cross-training."
+        ),
+        "TECHNOLOGY_DELIVERY_CONSTRAINT": (
+            "Approve executive action to recover critical technology "
+            "delivery, including defect resolution, integration readiness "
+            "and accountable recovery ownership."
+        ),
+        "PROCESS_CAPACITY_CONSTRAINT": (
+            "Approve executive action to address critical process and "
+            "capacity constraints, remove bottlenecks and rebalance capacity."
+        ),
+        "COMMERCIAL_CONVERSION_WEAKNESS": (
+            "Approve executive action to improve commercial conversion, "
+            "including funnel remediation and targeted sales intervention."
+        ),
+        "DEMAND_WEAKNESS": (
+            "Approve executive action to address demand weakness, including "
+            "target-market, channel and proposition interventions."
+        ),
+    }
+
+    if primary_cause in decisions:
+        return decisions[primary_cause]
+
+    if intervention:
+        return f"Approve executive action to implement: {intervention}"
+
+    return "Approve executive corrective action to restore strategic delivery."
+
+
 def _determine_board_ask(
     assessment: StrategicAssessment,
     evidence: list[OperationalEvidence],
@@ -174,7 +217,10 @@ def _determine_board_ask(
     ):
         return (
             "DECISION",
-            assessment.intervention,
+            _build_board_decision(
+                assessment.root_cause,
+                assessment.intervention,
+            ),
         )
 
     if assessment.trajectory == "OFF_TRACK":

@@ -215,3 +215,40 @@ def test_at_risk_issue_is_for_information():
     assert board_view.trajectory == "AT_RISK"
     assert board_view.board_ask == "INFORMATION"
     assert board_view.decision_required is None
+
+def test_board_decision_is_explicit_and_action_oriented():
+    objective = StrategicObjective(
+        name="Deliver strategic transformation roadmap",
+        description="Deliver critical transformation milestones to plan.",
+        target="100% critical milestones delivered",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="RESOURCE_CAPACITY",
+            metric="Single person dependency",
+            actual="Critical dependency exists",
+            target="No critical dependencies",
+            variance="-30%",
+            period="Current",
+            source="Programme Resource Assessment",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="CRITICAL",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+
+    board_view = synthesise_for_board(
+        assessment,
+        evidence=evidence,
+    )
+
+    assert board_view.board_ask == "DECISION"
+    assert board_view.decision_required
+    assert board_view.decision_required.startswith("Approve")
+    assert "resource" in board_view.decision_required.lower()
+    assert "resource" in board_view.decision_required.lower()
