@@ -856,3 +856,50 @@ def test_stronger_resource_evidence_outranks_weaker_technology_evidence():
     assert assessment.trajectory == "OFF_TRACK"
     assert assessment.root_cause == "RESOURCE_DEPENDENCY"
     assert "TECHNOLOGY_DELIVERY_CONSTRAINT" in assessment.contributing_causes
+
+def test_assessment_exposes_ranked_root_cause_scores():
+    objective = StrategicObjective(
+        name="Deliver strategic transformation roadmap",
+        description="Deliver critical transformation milestones to plan.",
+        target="100% critical milestones delivered",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="RESOURCE_CAPACITY",
+            metric="Single person dependency",
+            actual="Critical dependency exists",
+            target="No critical dependencies",
+            variance="-30%",
+            period="Current",
+            source="Programme Resource Assessment",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="CRITICAL",
+        ),
+        OperationalEvidence(
+            domain="TECHNOLOGY_DELIVERY",
+            metric="Platform defects unresolved",
+            actual="4 defects open",
+            target="0 defects open",
+            variance="-12%",
+            period="Current",
+            source="Technology Delivery MI",
+            trend="DETERIORATING",
+            confidence="MODERATE",
+            materiality="HIGH",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+
+    assert assessment.root_cause == "RESOURCE_DEPENDENCY"
+    assert assessment.root_cause_scores["RESOURCE_DEPENDENCY"] == 900
+    assert assessment.root_cause_scores["TECHNOLOGY_DELIVERY_CONSTRAINT"] == 144
+    assert (
+        assessment.root_cause_scores["RESOURCE_DEPENDENCY"]
+        >
+        assessment.root_cause_scores["TECHNOLOGY_DELIVERY_CONSTRAINT"]
+    )

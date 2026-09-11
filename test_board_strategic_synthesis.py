@@ -411,3 +411,38 @@ def test_low_confidence_critical_issue_does_not_trigger_intervention():
     assert assessment.trajectory == "OFF_TRACK"
     assert assessment.confidence == "LOW"
     assert board_view.escalation_level == "DECISION"
+
+
+def test_low_priority_critical_issue_does_not_trigger_intervention():
+    objective = StrategicObjective(
+        name="Improve secondary operational capability",
+        description="Improve a lower-priority operational capability.",
+        target="100% target delivery",
+        timeframe="FY27",
+        strategic_priority="LOW",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="RESOURCE_CAPACITY",
+            metric="Single person dependency",
+            actual="Critical dependency exists",
+            target="No critical dependencies",
+            variance="-30%",
+            period="Current",
+            source="Programme Resource Assessment",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="CRITICAL",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+
+    board_view = synthesise_for_board(
+        assessment,
+        evidence=evidence,
+    )
+
+    assert assessment.confidence == "MODERATE"
+    assert board_view.escalation_level != "INTERVENTION"

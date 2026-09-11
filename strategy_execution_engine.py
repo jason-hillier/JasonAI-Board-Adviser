@@ -48,6 +48,7 @@ class StrategicAssessment:
     intervention: Optional[str] = None
     confidence: Literal["LOW", "MODERATE", "HIGH"] = "MODERATE"
     contributing_causes: list[str] = field(default_factory=list)
+    root_cause_scores: dict[str, float] = field(default_factory=dict)
 
 def _assessment_confidence(
     evidence: list[OperationalEvidence],
@@ -498,6 +499,7 @@ def assess_strategy(
                     evidence,
                     _infer_root_cause(evidence),
                 ),
+                root_cause_scores=_score_root_causes(evidence),
             )
 
         # If the highest-materiality evidence is improving, retain

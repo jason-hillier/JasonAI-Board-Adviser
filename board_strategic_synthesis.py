@@ -314,6 +314,7 @@ def synthesise_for_board(
     if assessment.trajectory == "OFF_TRACK":
         if (
             assessment.confidence != "LOW"
+            and assessment.objective.strategic_priority == "HIGH"
             and evidence
             and any(
                 getattr(item, "materiality", None) == "CRITICAL"
