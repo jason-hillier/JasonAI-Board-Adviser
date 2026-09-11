@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal, Optional
 
 
@@ -47,6 +47,7 @@ class StrategicAssessment:
     root_cause: Optional[str] = None
     intervention: Optional[str] = None
     confidence: Literal["LOW", "MODERATE", "HIGH"] = "MODERATE"
+    contributing_causes: list[str] = field(default_factory=list)
 
 def _assessment_confidence(
     evidence: list[OperationalEvidence],
@@ -268,6 +269,168 @@ def _infer_root_cause(
     return None
 
 
+def _infer_contributing_causes(
+    evidence: list[OperationalEvidence],
+    primary_cause: Optional[str],
+) -> list[str]:
+    """
+    Identify additional material causal factors without replacing
+    the primary root cause.
+    """
+    materiality_levels = {
+        None: 2,
+        "LOW": 1,
+        "MODERATE": 2,
+        "HIGH": 3,
+        "CRITICAL": 4,
+    }
+
+    candidates = []
+
+    for item in evidence:
+        if (
+            not item.variance
+            or item.trend != "DETERIORATING"
+        ):
+            continue
+
+        variance = item.variance.strip()
+
+        if variance.startswith("-") and variance.endswith("%"):
+            try:
+                value = float(
+                    variance.replace("%", "").strip()
+                )
+
+                if value <= -10:
+                    candidates.append(item)
+
+            except ValueError:
+                pass
+
+    if not candidates:
+        return []
+
+    highest_materiality = max(
+        materiality_levels.get(item.materiality, 2)
+        for item in candidates
+    )
+
+    minimum_materiality = max(1, highest_materiality - 1)
+
+    diagnostic_evidence = [
+        item
+        for item in candidates
+        if materiality_levels.get(item.materiality, 2)
+        >= minimum_materiality
+    ]
+
+    metrics = " ".join(
+        item.metric.lower()
+        for item in diagnostic_evidence
+    )
+
+    domains = " ".join(
+        item.domain.lower()
+        for item in diagnostic_evidence
+    )
+
+    causes = []
+
+    technology_delivery_constraint = (
+        (
+            "technology" in domains
+            or "technology" in metrics
+            or "system" in metrics
+            or "platform" in metrics
+            or "integration" in metrics
+        )
+        and (
+            "defect" in metrics
+            or "integration" in metrics
+            or "readiness" in metrics
+            or "delay" in metrics
+            or "unresolved" in metrics
+        )
+    )
+
+    resource_dependency = (
+        (
+            "single person dependency" in metrics
+            or "single-person dependency" in metrics
+            or "key person dependency" in metrics
+            or "resource availability" in metrics
+            or "resource dependency" in metrics
+        )
+        and (
+            "delay" in metrics
+            or "milestone" in metrics
+            or "dependency" in metrics
+            or "availability" in metrics
+        )
+    )
+
+    commercial_conversion_weakness = (
+        "conversion" in metrics
+        or "quote to approval" in metrics
+        or "approval to payout" in metrics
+    )
+
+    demand_weakness = any(
+        (
+            (
+                "market_demand" in item.domain.lower()
+                or "market demand" in item.domain.lower()
+                or "qualified opportunity" in item.metric.lower()
+                or "pipeline" in item.metric.lower()
+            )
+            and item.variance
+            and item.variance.strip().startswith("-")
+            and item.trend == "DETERIORATING"
+        )
+        for item in diagnostic_evidence
+    )
+
+    approval_constraint = (
+        "approval" in metrics
+        and (
+            "turnaround" in metrics
+            or "lead time" in metrics
+            or "delay" in metrics
+        )
+    )
+
+    broker_constraint = (
+        "broker" in metrics
+        and (
+            "activation" in metrics
+            or "onboarding" in metrics
+            or "lead time" in metrics
+        )
+    )
+
+    if technology_delivery_constraint:
+        causes.append("TECHNOLOGY_DELIVERY_CONSTRAINT")
+
+    if resource_dependency:
+        causes.append("RESOURCE_DEPENDENCY")
+
+    if commercial_conversion_weakness:
+        causes.append("COMMERCIAL_CONVERSION_WEAKNESS")
+
+    if demand_weakness:
+        causes.append("DEMAND_WEAKNESS")
+
+    if approval_constraint and broker_constraint:
+        causes.append("PROCESS_CAPACITY_CONSTRAINT")
+
+    return [
+        cause
+        for cause in causes
+        if cause != primary_cause
+    ]
+
+
 def _root_cause_intervention(
     evidence: list[OperationalEvidence],
 ) -> str:
@@ -423,6 +586,10 @@ def assess_strategy(
                 root_cause=_infer_root_cause(evidence),
                 intervention=_root_cause_intervention(evidence),
                 confidence=_assessment_confidence(evidence, "HIGH"),
+                contributing_causes=_infer_contributing_causes(
+                    evidence,
+                    _infer_root_cause(evidence),
+                ),
             )
 
         # If the highest-materiality evidence is improving, retain

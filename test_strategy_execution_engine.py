@@ -694,3 +694,57 @@ def test_root_cause_ignores_low_materiality_unrelated_signal():
 
     assert assessment.trajectory == "OFF_TRACK"
     assert assessment.root_cause == "TECHNOLOGY_DELIVERY_CONSTRAINT"
+
+def test_primary_and_contributing_root_causes():
+    objective = StrategicObjective(
+        name="Deliver strategic transformation roadmap",
+        description="Deliver critical transformation milestones to plan.",
+        target="100% critical milestones delivered",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="TECHNOLOGY_DELIVERY",
+            metric="Critical system defects unresolved",
+            actual="12 critical defects open",
+            target="0 critical defects open",
+            variance="-20%",
+            period="Current",
+            source="Technology Delivery MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="CRITICAL",
+        ),
+        OperationalEvidence(
+            domain="RESOURCE_CAPACITY",
+            metric="Single person dependency",
+            actual="Critical dependency exists",
+            target="No critical single person dependencies",
+            variance="-15%",
+            period="Current",
+            source="Programme Resource Assessment",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="HIGH",
+        ),
+        OperationalEvidence(
+            domain="DELIVERY_PERFORMANCE",
+            metric="Milestones delayed by resource availability",
+            actual="4 critical milestones delayed",
+            target="0 critical milestones delayed",
+            variance="-18%",
+            period="Current",
+            source="Programme MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="HIGH",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+
+    assert assessment.trajectory == "OFF_TRACK"
+    assert assessment.root_cause == "TECHNOLOGY_DELIVERY_CONSTRAINT"
+    assert "RESOURCE_DEPENDENCY" in assessment.contributing_causes
