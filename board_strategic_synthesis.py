@@ -15,6 +15,8 @@ class BoardStrategicView:
     confidence: str
     board_implication: str
     recommended_action: str
+    board_ask: str
+    decision_required: Optional[str]
     evidence_rationale: list[str] = field(default_factory=list)
 
 
@@ -150,6 +152,43 @@ def _build_evidence_rationale(
     return rationale
 
 
+
+def _determine_board_ask(
+    assessment: StrategicAssessment,
+    evidence: list[OperationalEvidence],
+) -> tuple[str, Optional[str]]:
+    """
+    Determine whether the Board needs information, discussion,
+    or an explicit decision.
+    """
+
+    has_critical_evidence = any(
+        item.materiality == "CRITICAL"
+        for item in evidence
+    )
+
+    if (
+        assessment.trajectory == "OFF_TRACK"
+        and has_critical_evidence
+        and assessment.root_cause
+    ):
+        return (
+            "DECISION",
+            assessment.intervention,
+        )
+
+    if assessment.trajectory == "OFF_TRACK":
+        return (
+            "DISCUSSION",
+            None,
+        )
+
+    return (
+        "INFORMATION",
+        None,
+    )
+
+
 def synthesise_for_board(
     assessment: StrategicAssessment,
     evidence: Optional[list[OperationalEvidence]] = None,
@@ -206,13 +245,20 @@ def synthesise_for_board(
         )
     )
 
+    evidence_list = evidence or []
+
     evidence_rationale = (
         _build_evidence_rationale(
             primary_cause,
-            evidence,
+            evidence_list,
         )
-        if evidence
+        if evidence_list
         else []
+    )
+
+    board_ask, decision_required = _determine_board_ask(
+        assessment,
+        evidence_list,
     )
 
     return BoardStrategicView(
@@ -222,5 +268,7 @@ def synthesise_for_board(
         confidence=assessment.confidence,
         board_implication=board_implication,
         recommended_action=recommended_action,
+        board_ask=board_ask,
+        decision_required=decision_required,
         evidence_rationale=evidence_rationale,
     )
