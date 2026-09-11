@@ -653,3 +653,44 @@ def test_demand_weakness_root_cause_and_intervention():
     assert assessment.trajectory == "OFF_TRACK"
     assert assessment.root_cause == "DEMAND_WEAKNESS"
     assert "demand" in assessment.intervention.lower()
+
+def test_root_cause_ignores_low_materiality_unrelated_signal():
+    objective = StrategicObjective(
+        name="Deliver strategic transformation roadmap",
+        description="Deliver critical transformation milestones to plan.",
+        target="100% critical milestones delivered",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="TECHNOLOGY_DELIVERY",
+            metric="Critical system defects unresolved",
+            actual="10 critical defects open",
+            target="0 critical defects open",
+            variance="-20%",
+            period="Current",
+            source="Technology Delivery MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="CRITICAL",
+        ),
+        OperationalEvidence(
+            domain="MARKET_DEMAND",
+            metric="Qualified opportunity volume",
+            actual="70%",
+            target="100%",
+            variance="-30%",
+            period="Current",
+            source="Sales Pipeline MI",
+            trend="DETERIORATING",
+            confidence="LOW",
+            materiality="LOW",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+
+    assert assessment.trajectory == "OFF_TRACK"
+    assert assessment.root_cause == "TECHNOLOGY_DELIVERY_CONSTRAINT"

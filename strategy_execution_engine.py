@@ -102,17 +102,73 @@ def _infer_root_cause(
     evidence: list[OperationalEvidence],
 ) -> Optional[str]:
     """
-    Infer a small set of explainable strategic root-cause patterns
-    from operational evidence.
+    Infer explainable strategic root-cause patterns from the
+    material evidence that is actually driving the assessment.
     """
+
+    materiality_levels = {
+        None: 2,
+        "LOW": 1,
+        "MODERATE": 2,
+        "HIGH": 3,
+        "CRITICAL": 4,
+    }
+
+    # Root-cause diagnosis should focus on materially negative,
+    # deteriorating evidence rather than every available metric.
+    diagnostic_candidates = []
+
+    for item in evidence:
+        if (
+            not item.variance
+            or item.trend != "DETERIORATING"
+        ):
+            continue
+
+        variance = item.variance.strip()
+
+        if variance.startswith("-") and variance.endswith("%"):
+            try:
+                variance_value = float(
+                    variance.replace("%", "").strip()
+                )
+
+                if variance_value <= -10:
+                    diagnostic_candidates.append(item)
+
+            except ValueError:
+                pass
+
+    # Preserve broader diagnostic behaviour where no qualifying
+    # deteriorating material evidence can be identified.
+    if not diagnostic_candidates:
+        diagnostic_evidence = evidence
+    else:
+        highest_materiality = max(
+            materiality_levels.get(item.materiality, 2)
+            for item in diagnostic_candidates
+        )
+
+        # Include the highest materiality level and the level
+        # immediately beneath it. This retains related causal
+        # signals while excluding low-materiality noise.
+        minimum_materiality = max(1, highest_materiality - 1)
+
+        diagnostic_evidence = [
+            item
+            for item in diagnostic_candidates
+            if materiality_levels.get(item.materiality, 2)
+            >= minimum_materiality
+        ]
+
     metrics = " ".join(
         item.metric.lower()
-        for item in evidence
+        for item in diagnostic_evidence
     )
 
     domains = " ".join(
         item.domain.lower()
-        for item in evidence
+        for item in diagnostic_evidence
     )
 
     approval_constraint = (
@@ -191,7 +247,7 @@ def _infer_root_cause(
             and item.variance.strip().startswith("-")
             and item.trend == "DETERIORATING"
         )
-        for item in evidence
+        for item in diagnostic_evidence
     )
 
     if demand_weakness:
