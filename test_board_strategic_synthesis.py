@@ -376,3 +376,38 @@ def test_on_track_issue_is_information_only():
     board_view = synthesise_for_board(assessment, evidence=evidence)
 
     assert board_view.escalation_level == "INFORMATION"
+
+
+def test_low_confidence_critical_issue_does_not_trigger_intervention():
+    objective = StrategicObjective(
+        name="Deliver strategic transformation roadmap",
+        description="Deliver critical transformation milestones to plan.",
+        target="100% critical milestones delivered",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="RESOURCE_CAPACITY",
+            metric="Single person dependency",
+            actual="Critical dependency exists",
+            target="No critical dependencies",
+            variance="-30%",
+            period="Current",
+            source="Programme Resource Assessment",
+            trend="DETERIORATING",
+            confidence="LOW",
+            materiality="CRITICAL",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+    board_view = synthesise_for_board(
+        assessment,
+        evidence=evidence,
+    )
+
+    assert assessment.trajectory == "OFF_TRACK"
+    assert assessment.confidence == "LOW"
+    assert board_view.escalation_level == "DECISION"

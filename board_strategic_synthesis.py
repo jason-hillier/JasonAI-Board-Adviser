@@ -312,10 +312,14 @@ def synthesise_for_board(
     escalation_level = "INFORMATION"
 
     if assessment.trajectory == "OFF_TRACK":
-        if evidence and any(
-            getattr(item, "materiality", None) == "CRITICAL"
-            and getattr(item, "trend", None) == "DETERIORATING"
-            for item in evidence
+        if (
+            assessment.confidence != "LOW"
+            and evidence
+            and any(
+                getattr(item, "materiality", None) == "CRITICAL"
+                and getattr(item, "trend", None) == "DETERIORATING"
+                for item in evidence
+            )
         ):
             escalation_level = "INTERVENTION"
         else:
