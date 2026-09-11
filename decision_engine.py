@@ -178,8 +178,78 @@ Do not invent facts.
     if not output:
         raise RuntimeError("Ollama returned an empty structured response.")
 
-    decoder = json.JSONDecoder()
-    result, _ = decoder.raw_decode(output.lstrip())
+    def _parse_structured_json(raw_output: str):
+        cleaned = raw_output.strip()
+
+        if cleaned.startswith("```"):
+            lines = cleaned.splitlines()
+            if lines:
+                lines = lines[1:]
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            cleaned = "\n".join(lines).strip()
+
+        json_start = cleaned.find("{")
+        if json_start == -1:
+            raise json.JSONDecodeError(
+                "No JSON object found",
+                cleaned,
+                0,
+            )
+
+        decoder = json.JSONDecoder()
+        result, _ = decoder.raw_decode(cleaned[json_start:])
+
+        if not isinstance(result, dict):
+            raise ValueError(
+                "Structured decision response must be a JSON object."
+            )
+
+        return result
+
+    try:
+        result = _parse_structured_json(output)
+
+    except (json.JSONDecodeError, ValueError):
+        repair_response = ollama.chat(
+            model=model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a JSON repair engine. "
+                        "Return one valid JSON object only. "
+                        "Do not add markdown or commentary. "
+                        "Preserve the meaning and structure of the supplied data."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        "Repair the following malformed JSON so that it is "
+                        "valid JSON. Return JSON only.\n\n"
+                        + output
+                    ),
+                },
+            ],
+        )
+
+        repaired_output = (
+            repair_response["message"]["content"].strip()
+        )
+
+        if not repaired_output:
+            raise RuntimeError(
+                "Ollama returned an empty JSON repair response."
+            )
+
+        try:
+            result = _parse_structured_json(repaired_output)
+        except (json.JSONDecodeError, ValueError) as exc:
+            raise RuntimeError(
+                "Ollama failed to return valid structured JSON "
+                "after one repair attempt."
+            ) from exc
 
     evidence_items = [
         EvidenceItem(**item)
