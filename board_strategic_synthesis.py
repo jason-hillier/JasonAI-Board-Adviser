@@ -15,6 +15,7 @@ class BoardStrategicView:
     confidence: str
     board_implication: str
     recommended_action: str
+    escalation_level: str
     board_ask: str
     decision_required: Optional[str]
     evidence_rationale: list[str] = field(default_factory=list)
@@ -307,6 +308,21 @@ def synthesise_for_board(
         evidence_list,
     )
 
+
+    escalation_level = "INFORMATION"
+
+    if assessment.trajectory == "OFF_TRACK":
+        if evidence and any(
+            getattr(item, "materiality", None) == "CRITICAL"
+            and getattr(item, "trend", None) == "DETERIORATING"
+            for item in evidence
+        ):
+            escalation_level = "INTERVENTION"
+        else:
+            escalation_level = "DECISION"
+    elif assessment.trajectory == "AT_RISK":
+        escalation_level = "ATTENTION"
+
     return BoardStrategicView(
         trajectory=assessment.trajectory,
         primary_cause=primary_cause,
@@ -314,6 +330,7 @@ def synthesise_for_board(
         confidence=assessment.confidence,
         board_implication=board_implication,
         recommended_action=recommended_action,
+        escalation_level=escalation_level,
         board_ask=board_ask,
         decision_required=decision_required,
         evidence_rationale=evidence_rationale,

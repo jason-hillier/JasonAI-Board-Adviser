@@ -252,3 +252,127 @@ def test_board_decision_is_explicit_and_action_oriented():
     assert board_view.decision_required.startswith("Approve")
     assert "resource" in board_view.decision_required.lower()
     assert "resource" in board_view.decision_required.lower()
+
+
+def test_critical_off_track_issue_requires_board_intervention():
+    objective = StrategicObjective(
+        name="Deliver strategic transformation roadmap",
+        description="Deliver critical transformation milestones to plan.",
+        target="100% critical milestones delivered",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="RESOURCE_CAPACITY",
+            metric="Single person dependency",
+            actual="Critical dependency exists",
+            target="No critical dependencies",
+            variance="-30%",
+            period="Current",
+            source="Programme Resource Assessment",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="CRITICAL",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+
+    board_view = synthesise_for_board(
+        assessment,
+        evidence=evidence,
+    )
+
+    assert board_view.escalation_level == "INTERVENTION"
+
+
+def test_off_track_non_critical_issue_requires_board_decision():
+    objective = StrategicObjective(
+        name="Deliver strategic transformation roadmap",
+        description="Deliver critical transformation milestones to plan.",
+        target="100% critical milestones delivered",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="TECHNOLOGY_DELIVERY",
+            metric="Platform defects unresolved",
+            actual="4 defects open",
+            target="0 defects open",
+            variance="-15%",
+            period="Current",
+            source="Technology Delivery MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="HIGH",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+    board_view = synthesise_for_board(assessment, evidence=evidence)
+
+    assert board_view.escalation_level == "DECISION"
+
+
+def test_at_risk_issue_requires_board_attention():
+    objective = StrategicObjective(
+        name="Improve broker activation",
+        description="Improve activation performance.",
+        target="90% activated within SLA",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="BROKER_ONBOARDING",
+            metric="Activation performance",
+            actual="82%",
+            target="90%",
+            variance="-8%",
+            period="Current",
+            source="Broker MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="MODERATE",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+    board_view = synthesise_for_board(assessment, evidence=evidence)
+
+    assert board_view.escalation_level == "ATTENTION"
+
+
+def test_on_track_issue_is_information_only():
+    objective = StrategicObjective(
+        name="Maintain strategic delivery performance",
+        description="Maintain delivery against plan.",
+        target="100% milestone delivery",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="DELIVERY",
+            metric="Milestones delivered",
+            actual="102%",
+            target="100%",
+            variance="+2%",
+            period="Current",
+            source="Programme MI",
+            trend="STABLE",
+            confidence="HIGH",
+            materiality="MODERATE",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+    board_view = synthesise_for_board(assessment, evidence=evidence)
+
+    assert board_view.escalation_level == "INFORMATION"
