@@ -748,3 +748,111 @@ def test_primary_and_contributing_root_causes():
     assert assessment.trajectory == "OFF_TRACK"
     assert assessment.root_cause == "TECHNOLOGY_DELIVERY_CONSTRAINT"
     assert "RESOURCE_DEPENDENCY" in assessment.contributing_causes
+
+def test_root_causes_are_ranked_by_evidence_strength():
+    objective = StrategicObjective(
+        name="Deliver strategic transformation roadmap",
+        description="Deliver critical transformation milestones to plan.",
+        target="100% critical milestones delivered",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="RESOURCE_CAPACITY",
+            metric="Single person dependency",
+            actual="Critical dependency exists",
+            target="No critical dependencies",
+            variance="-25%",
+            period="Current",
+            source="Programme Resource Assessment",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="HIGH",
+        ),
+        OperationalEvidence(
+            domain="DELIVERY_PERFORMANCE",
+            metric="Milestones delayed by resource availability",
+            actual="4 milestones delayed",
+            target="0 milestones delayed",
+            variance="-20%",
+            period="Current",
+            source="Programme MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="HIGH",
+        ),
+        OperationalEvidence(
+            domain="TECHNOLOGY_DELIVERY",
+            metric="Critical platform defects unresolved",
+            actual="10 critical defects open",
+            target="0 critical defects open",
+            variance="-15%",
+            period="Current",
+            source="Technology Delivery MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="CRITICAL",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+
+    assert assessment.trajectory == "OFF_TRACK"
+    assert assessment.root_cause == "TECHNOLOGY_DELIVERY_CONSTRAINT"
+    assert assessment.contributing_causes[0] == "RESOURCE_DEPENDENCY"
+
+def test_stronger_resource_evidence_outranks_weaker_technology_evidence():
+    objective = StrategicObjective(
+        name="Deliver strategic transformation roadmap",
+        description="Deliver critical transformation milestones to plan.",
+        target="100% critical milestones delivered",
+        timeframe="FY27",
+        strategic_priority="HIGH",
+    )
+
+    evidence = [
+        OperationalEvidence(
+            domain="RESOURCE_CAPACITY",
+            metric="Single person dependency",
+            actual="Critical dependency exists",
+            target="No critical dependencies",
+            variance="-30%",
+            period="Current",
+            source="Programme Resource Assessment",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="CRITICAL",
+        ),
+        OperationalEvidence(
+            domain="DELIVERY_PERFORMANCE",
+            metric="Milestones delayed by resource availability",
+            actual="5 milestones delayed",
+            target="0 milestones delayed",
+            variance="-25%",
+            period="Current",
+            source="Programme MI",
+            trend="DETERIORATING",
+            confidence="HIGH",
+            materiality="CRITICAL",
+        ),
+        OperationalEvidence(
+            domain="TECHNOLOGY_DELIVERY",
+            metric="Platform defects unresolved",
+            actual="4 defects open",
+            target="0 defects open",
+            variance="-12%",
+            period="Current",
+            source="Technology Delivery MI",
+            trend="DETERIORATING",
+            confidence="MODERATE",
+            materiality="HIGH",
+        ),
+    ]
+
+    assessment = assess_strategy(objective, evidence)
+
+    assert assessment.trajectory == "OFF_TRACK"
+    assert assessment.root_cause == "RESOURCE_DEPENDENCY"
+    assert "TECHNOLOGY_DELIVERY_CONSTRAINT" in assessment.contributing_causes

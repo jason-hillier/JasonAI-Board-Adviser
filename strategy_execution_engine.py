@@ -99,174 +99,222 @@ def _assessment_confidence(
     )
 
 
-def _infer_root_cause(
-    evidence: list[OperationalEvidence],
-) -> Optional[str]:
-    """
-    Infer explainable strategic root-cause patterns from the
-    material evidence that is actually driving the assessment.
-    """
+def _variance_value(
+    item: OperationalEvidence,
+) -> Optional[float]:
+    """Return a numeric percentage variance where available."""
+    if not item.variance:
+        return None
 
-    materiality_levels = {
+    variance = item.variance.strip()
+
+    if not variance.endswith("%"):
+        return None
+
+    try:
+        return float(
+            variance.replace("%", "").strip()
+        )
+    except ValueError:
+        return None
+
+
+def _evidence_strength(
+    item: OperationalEvidence,
+) -> float:
+    """
+    Score evidence strength using severity, materiality and confidence.
+
+    Materiality weights are intentionally non-linear so strategically
+    critical evidence has appropriate precedence.
+    """
+    materiality_weights = {
+        None: 3,
+        "LOW": 1,
+        "MODERATE": 3,
+        "HIGH": 6,
+        "CRITICAL": 10,
+    }
+
+    confidence_weights = {
         None: 2,
         "LOW": 1,
         "MODERATE": 2,
         "HIGH": 3,
-        "CRITICAL": 4,
     }
 
-    # Root-cause diagnosis should focus on materially negative,
-    # deteriorating evidence rather than every available metric.
-    diagnostic_candidates = []
+    variance = _variance_value(item)
+
+    if variance is None:
+        return 0.0
+
+    severity = abs(variance)
+
+    return (
+        severity
+        * materiality_weights.get(item.materiality, 3)
+        * confidence_weights.get(item.confidence, 2)
+    )
+
+
+def _score_root_causes(
+    evidence: list[OperationalEvidence],
+) -> dict[str, float]:
+    """
+    Score candidate strategic root causes using the strongest
+    materially negative, deteriorating evidence supporting each cause.
+    """
+
+    diagnostic_evidence = []
 
     for item in evidence:
+        variance = _variance_value(item)
+
         if (
-            not item.variance
-            or item.trend != "DETERIORATING"
+            variance is not None
+            and variance <= -10
+            and item.trend == "DETERIORATING"
         ):
+            diagnostic_evidence.append(item)
+
+    if not diagnostic_evidence:
+        return {}
+
+    cause_evidence = {
+        "TECHNOLOGY_DELIVERY_CONSTRAINT": [],
+        "RESOURCE_DEPENDENCY": [],
+        "COMMERCIAL_CONVERSION_WEAKNESS": [],
+        "DEMAND_WEAKNESS": [],
+        "PROCESS_CAPACITY_CONSTRAINT": [],
+    }
+
+    approval_evidence = []
+    broker_evidence = []
+
+    for item in diagnostic_evidence:
+        metric = item.metric.lower()
+        domain = item.domain.lower()
+
+        technology_match = (
+            (
+                "technology" in domain
+                or "technology" in metric
+                or "system" in metric
+                or "platform" in metric
+                or "integration" in metric
+            )
+            and (
+                "defect" in metric
+                or "integration" in metric
+                or "readiness" in metric
+                or "delay" in metric
+                or "unresolved" in metric
+            )
+        )
+
+        if technology_match:
+            cause_evidence[
+                "TECHNOLOGY_DELIVERY_CONSTRAINT"
+            ].append(item)
+
+        resource_match = (
+            "single person dependency" in metric
+            or "single-person dependency" in metric
+            or "key person dependency" in metric
+            or "resource availability" in metric
+            or "resource dependency" in metric
+        )
+
+        if resource_match:
+            cause_evidence[
+                "RESOURCE_DEPENDENCY"
+            ].append(item)
+
+        conversion_match = (
+            "conversion" in metric
+            or "quote to approval" in metric
+            or "approval to payout" in metric
+        )
+
+        if conversion_match:
+            cause_evidence[
+                "COMMERCIAL_CONVERSION_WEAKNESS"
+            ].append(item)
+
+        demand_match = (
+            "market_demand" in domain
+            or "market demand" in domain
+            or "qualified opportunity" in metric
+            or "pipeline" in metric
+        )
+
+        if demand_match:
+            cause_evidence[
+                "DEMAND_WEAKNESS"
+            ].append(item)
+
+        approval_match = (
+            "approval" in metric
+            and (
+                "turnaround" in metric
+                or "lead time" in metric
+                or "delay" in metric
+            )
+        )
+
+        broker_match = (
+            "broker" in metric
+            and (
+                "activation" in metric
+                or "onboarding" in metric
+                or "lead time" in metric
+            )
+        )
+
+        if approval_match:
+            approval_evidence.append(item)
+
+        if broker_match:
+            broker_evidence.append(item)
+
+    # A process/capacity diagnosis requires both sides of the pattern.
+    if approval_evidence and broker_evidence:
+        cause_evidence["PROCESS_CAPACITY_CONSTRAINT"] = (
+            approval_evidence + broker_evidence
+        )
+
+    scores = {}
+
+    for cause, supporting_evidence in cause_evidence.items():
+        if not supporting_evidence:
             continue
 
-        variance = item.variance.strip()
-
-        if variance.startswith("-") and variance.endswith("%"):
-            try:
-                variance_value = float(
-                    variance.replace("%", "").strip()
-                )
-
-                if variance_value <= -10:
-                    diagnostic_candidates.append(item)
-
-            except ValueError:
-                pass
-
-    # Preserve broader diagnostic behaviour where no qualifying
-    # deteriorating material evidence can be identified.
-    if not diagnostic_candidates:
-        diagnostic_evidence = evidence
-    else:
-        highest_materiality = max(
-            materiality_levels.get(item.materiality, 2)
-            for item in diagnostic_candidates
+        # Use the strongest evidence item for causal precedence.
+        # Multiple supporting items strengthen explainability but do not
+        # allow quantity alone to overwhelm higher-materiality evidence.
+        scores[cause] = max(
+            _evidence_strength(item)
+            for item in supporting_evidence
         )
 
-        # Include the highest materiality level and the level
-        # immediately beneath it. This retains related causal
-        # signals while excluding low-materiality noise.
-        minimum_materiality = max(1, highest_materiality - 1)
+    return scores
 
-        diagnostic_evidence = [
-            item
-            for item in diagnostic_candidates
-            if materiality_levels.get(item.materiality, 2)
-            >= minimum_materiality
-        ]
 
-    metrics = " ".join(
-        item.metric.lower()
-        for item in diagnostic_evidence
+def _infer_root_cause(
+    evidence: list[OperationalEvidence],
+) -> Optional[str]:
+    """
+    Return the highest-ranked strategic root cause.
+    """
+    scores = _score_root_causes(evidence)
+
+    if not scores:
+        return None
+
+    return max(
+        scores,
+        key=scores.get,
     )
-
-    domains = " ".join(
-        item.domain.lower()
-        for item in diagnostic_evidence
-    )
-
-    approval_constraint = (
-        "approval" in metrics
-        and (
-            "turnaround" in metrics
-            or "lead time" in metrics
-            or "delay" in metrics
-        )
-    )
-
-    broker_constraint = (
-        "broker" in metrics
-        and (
-            "activation" in metrics
-            or "onboarding" in metrics
-            or "lead time" in metrics
-        )
-    )
-
-    resource_dependency = (
-        (
-            "single person dependency" in metrics
-            or "single-person dependency" in metrics
-            or "key person dependency" in metrics
-            or "resource availability" in metrics
-            or "resource dependency" in metrics
-        )
-        and (
-            "delay" in metrics
-            or "milestone" in metrics
-            or "dependency" in metrics
-            or "availability" in metrics
-        )
-    )
-
-    technology_delivery_constraint = (
-        (
-            "technology" in domains
-            or "technology" in metrics
-            or "system" in metrics
-            or "platform" in metrics
-            or "integration" in metrics
-        )
-        and (
-            "defect" in metrics
-            or "integration" in metrics
-            or "readiness" in metrics
-            or "delay" in metrics
-            or "unresolved" in metrics
-        )
-    )
-
-    commercial_conversion_weakness = (
-        (
-            "conversion" in metrics
-            or "quote to approval" in metrics
-            or "approval to payout" in metrics
-        )
-        and (
-            "commercial" in domains
-            or "sales" in domains
-            or "conversion" in metrics
-        )
-    )
-
-    demand_weakness = any(
-        (
-            (
-                "market_demand" in item.domain.lower()
-                or "market demand" in item.domain.lower()
-                or "qualified opportunity" in item.metric.lower()
-                or "pipeline" in item.metric.lower()
-            )
-            and item.variance
-            and item.variance.strip().startswith("-")
-            and item.trend == "DETERIORATING"
-        )
-        for item in diagnostic_evidence
-    )
-
-    if demand_weakness:
-        return "DEMAND_WEAKNESS"
-
-    if commercial_conversion_weakness:
-        return "COMMERCIAL_CONVERSION_WEAKNESS"
-
-    if technology_delivery_constraint:
-        return "TECHNOLOGY_DELIVERY_CONSTRAINT"
-
-    if resource_dependency:
-        return "RESOURCE_DEPENDENCY"
-
-    if approval_constraint and broker_constraint:
-        return "PROCESS_CAPACITY_CONSTRAINT"
-
-    return None
 
 
 def _infer_contributing_causes(
@@ -274,159 +322,19 @@ def _infer_contributing_causes(
     primary_cause: Optional[str],
 ) -> list[str]:
     """
-    Identify additional material causal factors without replacing
-    the primary root cause.
+    Return secondary causes ranked by evidence strength.
     """
-    materiality_levels = {
-        None: 2,
-        "LOW": 1,
-        "MODERATE": 2,
-        "HIGH": 3,
-        "CRITICAL": 4,
-    }
+    scores = _score_root_causes(evidence)
 
-    candidates = []
-
-    for item in evidence:
-        if (
-            not item.variance
-            or item.trend != "DETERIORATING"
-        ):
-            continue
-
-        variance = item.variance.strip()
-
-        if variance.startswith("-") and variance.endswith("%"):
-            try:
-                value = float(
-                    variance.replace("%", "").strip()
-                )
-
-                if value <= -10:
-                    candidates.append(item)
-
-            except ValueError:
-                pass
-
-    if not candidates:
-        return []
-
-    highest_materiality = max(
-        materiality_levels.get(item.materiality, 2)
-        for item in candidates
+    ranked = sorted(
+        scores,
+        key=scores.get,
+        reverse=True,
     )
-
-    minimum_materiality = max(1, highest_materiality - 1)
-
-    diagnostic_evidence = [
-        item
-        for item in candidates
-        if materiality_levels.get(item.materiality, 2)
-        >= minimum_materiality
-    ]
-
-    metrics = " ".join(
-        item.metric.lower()
-        for item in diagnostic_evidence
-    )
-
-    domains = " ".join(
-        item.domain.lower()
-        for item in diagnostic_evidence
-    )
-
-    causes = []
-
-    technology_delivery_constraint = (
-        (
-            "technology" in domains
-            or "technology" in metrics
-            or "system" in metrics
-            or "platform" in metrics
-            or "integration" in metrics
-        )
-        and (
-            "defect" in metrics
-            or "integration" in metrics
-            or "readiness" in metrics
-            or "delay" in metrics
-            or "unresolved" in metrics
-        )
-    )
-
-    resource_dependency = (
-        (
-            "single person dependency" in metrics
-            or "single-person dependency" in metrics
-            or "key person dependency" in metrics
-            or "resource availability" in metrics
-            or "resource dependency" in metrics
-        )
-        and (
-            "delay" in metrics
-            or "milestone" in metrics
-            or "dependency" in metrics
-            or "availability" in metrics
-        )
-    )
-
-    commercial_conversion_weakness = (
-        "conversion" in metrics
-        or "quote to approval" in metrics
-        or "approval to payout" in metrics
-    )
-
-    demand_weakness = any(
-        (
-            (
-                "market_demand" in item.domain.lower()
-                or "market demand" in item.domain.lower()
-                or "qualified opportunity" in item.metric.lower()
-                or "pipeline" in item.metric.lower()
-            )
-            and item.variance
-            and item.variance.strip().startswith("-")
-            and item.trend == "DETERIORATING"
-        )
-        for item in diagnostic_evidence
-    )
-
-    approval_constraint = (
-        "approval" in metrics
-        and (
-            "turnaround" in metrics
-            or "lead time" in metrics
-            or "delay" in metrics
-        )
-    )
-
-    broker_constraint = (
-        "broker" in metrics
-        and (
-            "activation" in metrics
-            or "onboarding" in metrics
-            or "lead time" in metrics
-        )
-    )
-
-    if technology_delivery_constraint:
-        causes.append("TECHNOLOGY_DELIVERY_CONSTRAINT")
-
-    if resource_dependency:
-        causes.append("RESOURCE_DEPENDENCY")
-
-    if commercial_conversion_weakness:
-        causes.append("COMMERCIAL_CONVERSION_WEAKNESS")
-
-    if demand_weakness:
-        causes.append("DEMAND_WEAKNESS")
-
-    if approval_constraint and broker_constraint:
-        causes.append("PROCESS_CAPACITY_CONSTRAINT")
 
     return [
         cause
-        for cause in causes
+        for cause in ranked
         if cause != primary_cause
     ]
 
