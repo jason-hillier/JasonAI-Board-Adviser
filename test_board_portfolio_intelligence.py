@@ -286,3 +286,74 @@ def test_repeated_non_material_theme_is_not_material_systemic_constraint():
     assert "RESOURCE_DEPENDENCY" in portfolio.systemic_themes
     assert portfolio.systemic_theme_counts["RESOURCE_DEPENDENCY"] == 2
     assert "RESOURCE_DEPENDENCY" not in portfolio.material_systemic_constraints
+
+
+def test_material_systemic_constraint_generates_portfolio_intervention():
+    views = [
+        BoardStrategicView(
+            trajectory="OFF_TRACK",
+            primary_cause="RESOURCE_DEPENDENCY",
+            contributing_causes=[],
+            confidence="HIGH",
+            board_implication="Transformation delivery is constrained.",
+            recommended_action="Remove resource dependency.",
+            escalation_level="DECISION",
+            board_ask="DECISION",
+            decision_required="Approve additional capacity.",
+        ),
+        BoardStrategicView(
+            trajectory="AT_RISK",
+            primary_cause="PROCESS_CAPACITY_CONSTRAINT",
+            contributing_causes=["RESOURCE_DEPENDENCY"],
+            confidence="HIGH",
+            board_implication="Operational delivery is constrained.",
+            recommended_action="Address capacity constraints.",
+            escalation_level="INTERVENTION",
+            board_ask="INTERVENTION",
+            decision_required=None,
+        ),
+    ]
+
+    portfolio = synthesise_portfolio(views)
+
+    intervention = portfolio.strategic_interventions["RESOURCE_DEPENDENCY"]
+
+    assert intervention.constraint == "RESOURCE_DEPENDENCY"
+    assert intervention.objectives_affected == 2
+    assert intervention.strategic_implication
+    assert intervention.recommended_intervention
+    assert intervention.board_action_required
+    assert intervention.confidence == "HIGH"
+
+
+def test_portfolio_intervention_confidence_uses_weakest_affected_assessment():
+    views = [
+        BoardStrategicView(
+            trajectory="OFF_TRACK",
+            primary_cause="RESOURCE_DEPENDENCY",
+            contributing_causes=[],
+            confidence="HIGH",
+            board_implication="Transformation delivery is constrained.",
+            recommended_action="Remove resource dependency.",
+            escalation_level="DECISION",
+            board_ask="DECISION",
+            decision_required="Approve additional capacity.",
+        ),
+        BoardStrategicView(
+            trajectory="AT_RISK",
+            primary_cause="PROCESS_CAPACITY_CONSTRAINT",
+            contributing_causes=["RESOURCE_DEPENDENCY"],
+            confidence="MODERATE",
+            board_implication="Operational delivery is constrained.",
+            recommended_action="Address capacity constraints.",
+            escalation_level="INTERVENTION",
+            board_ask="INTERVENTION",
+            decision_required=None,
+        ),
+    ]
+
+    portfolio = synthesise_portfolio(views)
+
+    intervention = portfolio.strategic_interventions["RESOURCE_DEPENDENCY"]
+
+    assert intervention.confidence == "MODERATE"
