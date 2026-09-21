@@ -390,3 +390,83 @@ def test_non_critical_thesis_does_not_trigger_reconsider():
 
     assert course_correction.action == "EXECUTE"
     assert course_correction.strategy_challenge is False
+
+
+def test_invalidated_strategic_thesis_triggers_reconsider():
+    from strategic_course_correction import StrategicThesisEvidence
+
+    views = [
+        BoardStrategicView(
+            trajectory="OFF_TRACK",
+            primary_cause="DEMAND_WEAKNESS",
+            contributing_causes=[],
+            confidence="HIGH",
+            board_implication="The strategic growth thesis is under material pressure.",
+            recommended_action="Review strategic direction.",
+            escalation_level="DECISION",
+            board_ask="DECISION",
+            decision_required="Review continued strategic commitment.",
+        ),
+    ]
+
+    portfolio = synthesise_portfolio(views)
+
+    thesis_evidence = [
+        StrategicThesisEvidence(
+            thesis="Sustained growth in the target market creates an attractive basis for investment.",
+            status="INVALIDATED",
+            evidence="Structural market contraction has removed the economic basis for the planned growth strategy.",
+            persistence="SUSTAINED",
+            materiality="CRITICAL",
+            confidence="HIGH",
+        ),
+    ]
+
+    course_correction = assess_course_correction(
+        portfolio,
+        thesis_evidence=thesis_evidence,
+    )
+
+    assert course_correction.action == "RECONSIDER"
+    assert course_correction.strategy_challenge is True
+    assert "thesis" in course_correction.rationale.lower()
+    assert course_correction.confidence == "HIGH"
+
+
+def test_non_critical_thesis_evidence_does_not_trigger_reconsider():
+    from strategic_course_correction import StrategicThesisEvidence
+
+    views = [
+        BoardStrategicView(
+            trajectory="AT_RISK",
+            primary_cause="DEMAND_WEAKNESS",
+            contributing_causes=[],
+            confidence="HIGH",
+            board_implication="The growth strategy is under pressure.",
+            recommended_action="Review market response.",
+            escalation_level="INTERVENTION",
+            board_ask="INTERVENTION",
+            decision_required=None,
+        ),
+    ]
+
+    portfolio = synthesise_portfolio(views)
+
+    thesis_evidence = [
+        StrategicThesisEvidence(
+            thesis="Target market supports sustained growth.",
+            status="INVALIDATED",
+            evidence="Market conditions have weakened materially.",
+            persistence="SUSTAINED",
+            materiality="HIGH",
+            confidence="HIGH",
+        ),
+    ]
+
+    course_correction = assess_course_correction(
+        portfolio,
+        thesis_evidence=thesis_evidence,
+    )
+
+    assert course_correction.action != "RECONSIDER"
+    assert course_correction.strategy_challenge is False

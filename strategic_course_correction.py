@@ -45,6 +45,16 @@ class StrategicThesis:
 
 
 @dataclass
+class StrategicThesisEvidence:
+    thesis: str
+    status: str
+    evidence: str
+    persistence: str
+    materiality: str
+    confidence: str
+
+
+@dataclass
 class StrategicCourseCorrection:
     action: str
     strategy_challenge: bool
@@ -129,7 +139,32 @@ def assess_course_correction(
     dependencies: Optional[list[StrategicDependency]] = None,
     capability_gaps: Optional[list[StrategicCapabilityGap]] = None,
     theses: Optional[list[StrategicThesis]] = None,
+    thesis_evidence: Optional[list[StrategicThesisEvidence]] = None,
 ) -> StrategicCourseCorrection:
+    thesis_evidence = thesis_evidence or []
+
+    invalidated_thesis = [
+        item
+        for item in thesis_evidence
+        if item.status == "INVALIDATED"
+        and item.persistence == "SUSTAINED"
+        and item.materiality == "CRITICAL"
+        and item.confidence == "HIGH"
+    ]
+
+    if invalidated_thesis:
+        return StrategicCourseCorrection(
+            action="RECONSIDER",
+            strategy_challenge=True,
+            rationale=(
+                "High-confidence evidence indicates that the strategic "
+                "thesis itself has been invalidated on a sustained and "
+                "critical basis. The Board should reconsider whether the "
+                "current strategic direction remains justified."
+            ),
+            confidence="HIGH",
+        )
+
     assumptions = assumptions or []
     dependencies = dependencies or []
     capability_gaps = capability_gaps or []
