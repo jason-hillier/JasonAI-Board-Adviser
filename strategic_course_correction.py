@@ -23,6 +23,28 @@ class StrategicDependency:
 
 
 @dataclass
+class StrategicCapabilityGap:
+    capability: str
+    required_state: str
+    current_state: str
+    gap_type: str
+    persistence: str
+    materiality: str
+    confidence: str
+
+
+@dataclass
+class StrategicThesis:
+    name: str
+    thesis: str
+    status: str
+    evidence: str
+    materiality: str
+    persistence: str
+    confidence: str
+
+
+@dataclass
 class StrategicCourseCorrection:
     action: str
     strategy_challenge: bool
@@ -75,13 +97,65 @@ def _blocking_dependencies(
     ]
 
 
+def _transformational_capability_gaps(
+    capability_gaps: list[StrategicCapabilityGap],
+) -> list[StrategicCapabilityGap]:
+    return [
+        gap
+        for gap in capability_gaps
+        if gap.gap_type == "STRUCTURAL"
+        and gap.persistence == "SUSTAINED"
+        and gap.materiality in {"HIGH", "CRITICAL"}
+        and gap.confidence == "HIGH"
+    ]
+
+
+def _invalidated_strategic_theses(
+    theses: list[StrategicThesis],
+) -> list[StrategicThesis]:
+    return [
+        thesis
+        for thesis in theses
+        if thesis.status == "INVALIDATED"
+        and thesis.materiality == "CRITICAL"
+        and thesis.persistence == "SUSTAINED"
+        and thesis.confidence == "HIGH"
+    ]
+
+
 def assess_course_correction(
     portfolio: BoardPortfolioView,
     assumptions: Optional[list[StrategicAssumption]] = None,
     dependencies: Optional[list[StrategicDependency]] = None,
+    capability_gaps: Optional[list[StrategicCapabilityGap]] = None,
+    theses: Optional[list[StrategicThesis]] = None,
 ) -> StrategicCourseCorrection:
     assumptions = assumptions or []
     dependencies = dependencies or []
+    capability_gaps = capability_gaps or []
+    theses = theses or []
+
+    invalidated_theses = _invalidated_strategic_theses(
+        theses
+    )
+
+    if invalidated_theses:
+        thesis_names = ", ".join(
+            thesis.name
+            for thesis in invalidated_theses
+        )
+
+        return StrategicCourseCorrection(
+            action="RECONSIDER",
+            strategy_challenge=True,
+            rationale=(
+                "Critical, sustained and high-confidence evidence "
+                "has invalidated the strategic thesis: "
+                f"{thesis_names}. The viability of the current "
+                "strategic direction should therefore be reconsidered."
+            ),
+            confidence="HIGH",
+        )
 
     invalidated = _invalidated_assumptions(assumptions)
 
@@ -109,6 +183,29 @@ def assess_course_correction(
             confidence="HIGH",
         )
 
+    transformational_gaps = _transformational_capability_gaps(
+        capability_gaps
+    )
+
+    if transformational_gaps:
+        capability_names = ", ".join(
+            gap.capability
+            for gap in transformational_gaps
+        )
+
+        return StrategicCourseCorrection(
+            action="TRANSFORM",
+            strategy_challenge=False,
+            rationale=(
+                "The strategic direction remains valid, but sustained "
+                "structural capability gaps materially constrain the "
+                "organisation's ability to deliver it: "
+                f"{capability_names}. Transformation of the "
+                "underlying capability is required."
+            ),
+            confidence="HIGH",
+        )
+
     blocking = _blocking_dependencies(dependencies)
 
     high_confidence_blocking = [
@@ -127,9 +224,10 @@ def assess_course_correction(
             action="RESEQUENCE",
             strategy_challenge=False,
             rationale=(
-                "The strategic direction remains valid, but high-confidence "
-                "blocking dependencies require the sequence or timing of "
-                f"strategic objectives to change: {dependency_names}."
+                "The strategic direction remains valid, but "
+                "high-confidence blocking dependencies require the "
+                "sequence or timing of strategic objectives to change: "
+                f"{dependency_names}."
             ),
             confidence="HIGH",
         )

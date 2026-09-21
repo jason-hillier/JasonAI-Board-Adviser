@@ -220,3 +220,173 @@ def test_invalidated_assumption_takes_precedence_over_blocking_dependency():
     assert course_correction.action == "ADAPT"
     assert course_correction.strategy_challenge is True
     assert course_correction.confidence == "HIGH"
+
+
+def test_structural_capability_gap_triggers_transform():
+    from strategic_course_correction import StrategicCapabilityGap
+
+    views = [
+        BoardStrategicView(
+            trajectory="OFF_TRACK",
+            primary_cause="PROCESS_CAPACITY_CONSTRAINT",
+            contributing_causes=["TECHNOLOGY_DELIVERY_CONSTRAINT"],
+            confidence="HIGH",
+            board_implication="The current operating capability cannot support strategic scale.",
+            recommended_action="Address structural capability constraints.",
+            escalation_level="DECISION",
+            board_ask="DECISION",
+            decision_required="Approve operating capability transformation.",
+        ),
+    ]
+
+    portfolio = synthesise_portfolio(views)
+
+    capability_gaps = [
+        StrategicCapabilityGap(
+            capability="Digital origination",
+            required_state="Scalable straight-through processing",
+            current_state="Manual multi-stage processing",
+            gap_type="STRUCTURAL",
+            persistence="SUSTAINED",
+            materiality="HIGH",
+            confidence="HIGH",
+        ),
+    ]
+
+    course_correction = assess_course_correction(
+        portfolio,
+        capability_gaps=capability_gaps,
+    )
+
+    assert course_correction.action == "TRANSFORM"
+    assert course_correction.strategy_challenge is False
+    assert "capability" in course_correction.rationale.lower()
+    assert course_correction.confidence == "HIGH"
+
+
+def test_non_structural_capability_gap_does_not_trigger_transform():
+    from strategic_course_correction import StrategicCapabilityGap
+
+    views = [
+        BoardStrategicView(
+            trajectory="OFF_TRACK",
+            primary_cause="TECHNOLOGY_DELIVERY_CONSTRAINT",
+            contributing_causes=[],
+            confidence="HIGH",
+            board_implication="Technology delivery is off track.",
+            recommended_action="Recover technology delivery.",
+            escalation_level="INTERVENTION",
+            board_ask="INTERVENTION",
+            decision_required=None,
+        ),
+    ]
+
+    portfolio = synthesise_portfolio(views)
+
+    capability_gaps = [
+        StrategicCapabilityGap(
+            capability="Digital origination",
+            required_state="Scalable straight-through processing",
+            current_state="Current platform requires remediation",
+            gap_type="EXECUTION",
+            persistence="SUSTAINED",
+            materiality="HIGH",
+            confidence="HIGH",
+        ),
+    ]
+
+    course_correction = assess_course_correction(
+        portfolio,
+        capability_gaps=capability_gaps,
+    )
+
+    assert course_correction.action == "EXECUTE"
+    assert course_correction.strategy_challenge is False
+
+
+def test_invalidated_strategic_thesis_triggers_reconsider():
+    from strategic_course_correction import StrategicThesis
+
+    views = [
+        BoardStrategicView(
+            trajectory="OFF_TRACK",
+            primary_cause="DEMAND_WEAKNESS",
+            contributing_causes=["COMMERCIAL_CONVERSION_WEAKNESS"],
+            confidence="HIGH",
+            board_implication="The growth strategy is materially underperforming.",
+            recommended_action="Review the strategic proposition.",
+            escalation_level="DECISION",
+            board_ask="DECISION",
+            decision_required="Determine whether the current strategic thesis remains viable.",
+        ),
+    ]
+
+    portfolio = synthesise_portfolio(views)
+
+    theses = [
+        StrategicThesis(
+            name="Profitable market expansion",
+            thesis=(
+                "The target market can support profitable growth "
+                "at the required scale."
+            ),
+            status="INVALIDATED",
+            evidence=(
+                "Sustained market contraction and adverse unit economics "
+                "challenge the viability of the growth thesis."
+            ),
+            materiality="CRITICAL",
+            persistence="SUSTAINED",
+            confidence="HIGH",
+        ),
+    ]
+
+    course_correction = assess_course_correction(
+        portfolio,
+        theses=theses,
+    )
+
+    assert course_correction.action == "RECONSIDER"
+    assert course_correction.strategy_challenge is True
+    assert "thesis" in course_correction.rationale.lower()
+    assert course_correction.confidence == "HIGH"
+
+
+def test_non_critical_thesis_does_not_trigger_reconsider():
+    from strategic_course_correction import StrategicThesis
+
+    views = [
+        BoardStrategicView(
+            trajectory="OFF_TRACK",
+            primary_cause="DEMAND_WEAKNESS",
+            contributing_causes=[],
+            confidence="HIGH",
+            board_implication="Growth performance is materially under pressure.",
+            recommended_action="Review strategic response.",
+            escalation_level="DECISION",
+            board_ask="DECISION",
+            decision_required="Review strategic response.",
+        ),
+    ]
+
+    portfolio = synthesise_portfolio(views)
+
+    theses = [
+        StrategicThesis(
+            name="Profitable market expansion",
+            thesis="The target market can support profitable growth.",
+            status="INVALIDATED",
+            evidence="Evidence challenges elements of the growth thesis.",
+            materiality="HIGH",
+            persistence="SUSTAINED",
+            confidence="HIGH",
+        ),
+    ]
+
+    course_correction = assess_course_correction(
+        portfolio,
+        theses=theses,
+    )
+
+    assert course_correction.action == "EXECUTE"
+    assert course_correction.strategy_challenge is False
