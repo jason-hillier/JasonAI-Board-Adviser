@@ -102,3 +102,44 @@ def test_decision_trace_preserves_source_evidence_provenance():
 
     assert trace.supporting_evidence == source_evidence
     assert "Digital origination capability" in trace.supporting_evidence[0]
+
+
+def test_decision_trace_supports_structured_evidence_provenance():
+    from strategic_decision_trace import EvidenceProvenance
+
+    course_correction = StrategicCourseCorrection(
+        action="TRANSFORM",
+        strategy_challenge=False,
+        rationale=(
+            "Structural capability gaps prevent delivery of "
+            "the strategic intent."
+        ),
+        confidence="HIGH",
+    )
+
+    provenance = [
+        EvidenceProvenance(
+            source="Technology Delivery MI",
+            evidence_type="CAPABILITY_GAP",
+            reference="Digital origination capability",
+            finding="Current capability is structurally insufficient.",
+            period="FY27 Q2",
+            confidence="HIGH",
+        ),
+    ]
+
+    trace = build_decision_trace(
+        course_correction,
+        evidence_provenance=provenance,
+    )
+
+    assert len(trace.evidence_provenance) == 1
+
+    evidence = trace.evidence_provenance[0]
+
+    assert evidence.source == "Technology Delivery MI"
+    assert evidence.evidence_type == "CAPABILITY_GAP"
+    assert evidence.reference == "Digital origination capability"
+    assert evidence.period == "FY27 Q2"
+    assert evidence.confidence == "HIGH"
+    assert evidence.finding

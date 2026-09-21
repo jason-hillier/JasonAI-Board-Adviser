@@ -4,6 +4,16 @@ from strategic_course_correction import StrategicCourseCorrection
 
 
 @dataclass
+class EvidenceProvenance:
+    source: str
+    evidence_type: str
+    reference: str
+    finding: str
+    period: str
+    confidence: str
+
+
+@dataclass
 class StrategicDecisionTrace:
     selected_action: str
     confidence: str
@@ -13,11 +23,15 @@ class StrategicDecisionTrace:
     )
     decision_rule: str = ""
     supporting_evidence: list[str] = field(default_factory=list)
+    evidence_provenance: list[EvidenceProvenance] = field(
+        default_factory=list
+    )
 
 
 def build_decision_trace(
     course_correction: StrategicCourseCorrection,
     supporting_evidence: list[str] | None = None,
+    evidence_provenance: list[EvidenceProvenance] | None = None,
 ) -> StrategicDecisionTrace:
     rejected_alternatives: dict[str, str] = {}
 
@@ -56,5 +70,10 @@ def build_decision_trace(
             supporting_evidence
             if supporting_evidence is not None
             else [course_correction.rationale]
+        ),
+        evidence_provenance=(
+            evidence_provenance
+            if evidence_provenance is not None
+            else []
         ),
     )
