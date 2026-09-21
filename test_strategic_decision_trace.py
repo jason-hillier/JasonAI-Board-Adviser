@@ -75,3 +75,30 @@ def test_decision_trace_exposes_rule_and_supporting_evidence():
 
     assert trace.supporting_evidence
     assert isinstance(trace.supporting_evidence, list)
+
+
+def test_decision_trace_preserves_source_evidence_provenance():
+    course_correction = StrategicCourseCorrection(
+        action="TRANSFORM",
+        strategy_challenge=False,
+        rationale=(
+            "Strategic intent remains valid, but structural capability "
+            "gaps prevent delivery."
+        ),
+        confidence="HIGH",
+    )
+
+    source_evidence = [
+        "Digital origination capability: STRUCTURAL gap",
+        "Gap persistence: SUSTAINED",
+        "Materiality: HIGH",
+        "Confidence: HIGH",
+    ]
+
+    trace = build_decision_trace(
+        course_correction,
+        supporting_evidence=source_evidence,
+    )
+
+    assert trace.supporting_evidence == source_evidence
+    assert "Digital origination capability" in trace.supporting_evidence[0]

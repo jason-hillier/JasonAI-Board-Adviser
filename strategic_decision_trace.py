@@ -17,6 +17,7 @@ class StrategicDecisionTrace:
 
 def build_decision_trace(
     course_correction: StrategicCourseCorrection,
+    supporting_evidence: list[str] | None = None,
 ) -> StrategicDecisionTrace:
     rejected_alternatives: dict[str, str] = {}
 
@@ -51,7 +52,9 @@ def build_decision_trace(
             f"{course_correction.action}: "
             f"{course_correction.rationale}"
         ),
-        supporting_evidence=[
-            course_correction.rationale
-        ],
+        supporting_evidence=(
+            supporting_evidence
+            if supporting_evidence is not None
+            else [course_correction.rationale]
+        ),
     )
