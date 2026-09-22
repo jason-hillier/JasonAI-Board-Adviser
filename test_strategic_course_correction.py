@@ -470,3 +470,45 @@ def test_non_critical_thesis_evidence_does_not_trigger_reconsider():
 
     assert course_correction.action != "RECONSIDER"
     assert course_correction.strategy_challenge is False
+
+
+def test_structural_capability_gap_triggers_transform():
+    from strategic_course_correction import StrategicCapabilityGap
+
+    views = [
+        BoardStrategicView(
+            trajectory="OFF_TRACK",
+            primary_cause="PROCESS_CAPACITY_CONSTRAINT",
+            contributing_causes=["TECHNOLOGY_DELIVERY_CONSTRAINT"],
+            confidence="HIGH",
+            board_implication="Current operating capability cannot support strategic scale.",
+            recommended_action="Address structural capability constraints.",
+            escalation_level="DECISION",
+            board_ask="DECISION",
+            decision_required="Approve structural capability intervention.",
+        ),
+    ]
+
+    portfolio = synthesise_portfolio(views)
+
+    capability_gaps = [
+        StrategicCapabilityGap(
+            capability="Digital origination",
+            required_state="Scalable straight-through processing",
+            current_state="Manual multi-stage processing",
+            gap_type="STRUCTURAL",
+            persistence="SUSTAINED",
+            materiality="HIGH",
+            confidence="HIGH",
+        ),
+    ]
+
+    course_correction = assess_course_correction(
+        portfolio,
+        capability_gaps=capability_gaps,
+    )
+
+    assert course_correction.action == "TRANSFORM"
+    assert course_correction.strategy_challenge is False
+    assert "capability" in course_correction.rationale.lower()
+    assert course_correction.confidence == "HIGH"
