@@ -512,3 +512,47 @@ def test_structural_capability_gap_triggers_transform():
     assert course_correction.strategy_challenge is False
     assert "capability" in course_correction.rationale.lower()
     assert course_correction.confidence == "HIGH"
+
+
+def test_fundamental_strategic_thesis_challenge_triggers_reconsider():
+    from strategic_course_correction import StrategicThesisEvidence
+
+    views = [
+        BoardStrategicView(
+            trajectory="OFF_TRACK",
+            primary_cause="DEMAND_WEAKNESS",
+            contributing_causes=[],
+            confidence="HIGH",
+            board_implication="The strategic growth proposition is under fundamental pressure.",
+            recommended_action="Review the continuing strategic rationale.",
+            escalation_level="DECISION",
+            board_ask="DECISION",
+            decision_required="Determine whether the strategic proposition remains viable.",
+        ),
+    ]
+
+    portfolio = synthesise_portfolio(views)
+
+    thesis_challenges = [
+        StrategicThesisEvidence(
+            thesis="Target market provides sustainable attractive returns",
+            evidence=(
+                "Structural market change has materially reduced expected "
+                "returns below the organisation's strategic hurdle rate."
+            ),
+            status="INVALIDATED",
+            persistence="SUSTAINED",
+            materiality="CRITICAL",
+            confidence="HIGH",
+        ),
+    ]
+
+    course_correction = assess_course_correction(
+        portfolio,
+        thesis_evidence=thesis_challenges,
+    )
+
+    assert course_correction.action == "RECONSIDER"
+    assert course_correction.strategy_challenge is True
+    assert "thesis" in course_correction.rationale.lower()
+    assert course_correction.confidence == "HIGH"
