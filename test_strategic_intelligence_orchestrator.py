@@ -132,3 +132,61 @@ def test_orchestrator_generates_board_briefing_from_governed_executive_view():
     assert result.board_briefing.supporting_evidence == (
         "Digital origination remains dependent on manual multi-stage processing."
     )
+
+
+def test_orchestrator_result_exposes_enhanced_narrative():
+    from dataclasses import fields
+    from strategic_intelligence_orchestrator import StrategicIntelligenceResult
+
+    field_names = {
+        field.name
+        for field in fields(StrategicIntelligenceResult)
+    }
+
+    assert "enhanced_narrative" in field_names
+
+
+def test_orchestrator_populates_enhanced_narrative_without_changing_governed_fields():
+    from executive_strategic_synthesis import ExecutiveStrategicView, ExecutiveDecisionTraceability
+    from strategic_intelligence_orchestrator import StrategicIntelligenceOrchestrator
+
+    executive_view = ExecutiveStrategicView(
+        strategic_position="TRANSFORM",
+        executive_summary="Current capability is insufficient.",
+        primary_issue="RESOURCE_DEPENDENCY",
+        board_implication="Delivery capability requires structural intervention.",
+        recommended_response="Transform the underlying capability.",
+        decision_required="Approve structural capability intervention.",
+        confidence="HIGH",
+        traceability=ExecutiveDecisionTraceability(
+            strategic_trigger="STRATEGIC_CAPABILITY",
+            trigger_evidence="Manual processing constrains scale.",
+            primary_issue="RESOURCE_DEPENDENCY",
+            confidence="HIGH",
+        ),
+    )
+
+    orchestrator = StrategicIntelligenceOrchestrator()
+
+    result = orchestrator.run_governed_executive_pipeline(
+        executive_view
+    )
+
+    assert result.enhanced_narrative is not None
+
+    assert (
+        result.enhanced_narrative.strategic_position
+        == result.board_briefing.strategic_position
+    )
+    assert (
+        result.enhanced_narrative.confidence
+        == result.board_briefing.confidence
+    )
+    assert (
+        result.enhanced_narrative.decision_required
+        == result.board_briefing.decision_required
+    )
+    assert (
+        result.enhanced_narrative.supporting_evidence
+        == result.board_briefing.supporting_evidence
+    )

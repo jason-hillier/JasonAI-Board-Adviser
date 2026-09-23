@@ -2,12 +2,14 @@ from dataclasses import dataclass
 
 from executive_strategic_synthesis import ExecutiveStrategicView
 from board_briefing_generator import BoardBriefing, generate_board_briefing
+from board_narrative_enhancer import enhance_board_narrative
 
 
 @dataclass
 class StrategicIntelligenceResult:
     executive_view: ExecutiveStrategicView
     board_briefing: BoardBriefing
+    enhanced_narrative: object = None
 
 
 class StrategicIntelligenceOrchestrator:
@@ -44,7 +46,12 @@ class StrategicIntelligenceOrchestrator:
 
         board_briefing = generate_board_briefing(executive_view)
 
+        enhanced_narrative = enhance_board_narrative(
+            board_briefing
+        )
+
         return StrategicIntelligenceResult(
             executive_view=executive_view,
             board_briefing=board_briefing,
+            enhanced_narrative=enhanced_narrative,
         )
