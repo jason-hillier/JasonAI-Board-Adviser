@@ -1,3 +1,15 @@
+from dataclasses import dataclass
+
+from executive_strategic_synthesis import ExecutiveStrategicView
+from board_briefing_generator import BoardBriefing, generate_board_briefing
+
+
+@dataclass
+class StrategicIntelligenceResult:
+    executive_view: ExecutiveStrategicView
+    board_briefing: BoardBriefing
+
+
 class StrategicIntelligenceOrchestrator:
     """
     Coordinate the governed strategic intelligence pipeline.
@@ -18,7 +30,10 @@ class StrategicIntelligenceOrchestrator:
         "NARRATIVE_GOVERNANCE",
     ]
 
-    def run_governed_executive_pipeline(self, executive_view):
+    def run_governed_executive_pipeline(
+        self,
+        executive_view: ExecutiveStrategicView,
+    ) -> StrategicIntelligenceResult:
         """
         Pass an already-governed executive strategic view into
         the downstream Board communication pipeline.
@@ -26,4 +41,10 @@ class StrategicIntelligenceOrchestrator:
         This boundary must not alter strategic position,
         confidence, decision requirements or traceability.
         """
-        return executive_view
+
+        board_briefing = generate_board_briefing(executive_view)
+
+        return StrategicIntelligenceResult(
+            executive_view=executive_view,
+            board_briefing=board_briefing,
+        )

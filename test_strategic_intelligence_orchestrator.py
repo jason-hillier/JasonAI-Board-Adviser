@@ -76,12 +76,59 @@ def test_orchestrator_preserves_governed_transform_position():
         executive_view
     )
 
-    assert result.strategic_position == "TRANSFORM"
-    assert result.confidence == "HIGH"
-    assert result.decision_required == (
+    assert result.executive_view.strategic_position == "TRANSFORM"
+    assert result.executive_view.confidence == "HIGH"
+    assert result.executive_view.decision_required == (
         "Approve structural capability intervention."
     )
 
-    assert result.traceability.strategic_trigger == (
+    assert result.executive_view.traceability.strategic_trigger == (
         "STRATEGIC_CAPABILITY"
+    )
+
+
+def test_orchestrator_generates_board_briefing_from_governed_executive_view():
+    from executive_strategic_synthesis import (
+        ExecutiveDecisionTraceability,
+        ExecutiveStrategicView,
+    )
+
+    executive_view = ExecutiveStrategicView(
+        strategic_position="TRANSFORM",
+        executive_summary=(
+            "The strategic objective remains valid, but current "
+            "delivery capability is insufficient."
+        ),
+        primary_issue="TECHNOLOGY_DELIVERY_CONSTRAINT",
+        board_implication=(
+            "The organisation cannot sustainably deliver the required "
+            "strategic outcome using the current capability."
+        ),
+        recommended_response=(
+            "Transform the underlying organisational and technology capability."
+        ),
+        decision_required="Approve structural capability intervention.",
+        confidence="HIGH",
+        traceability=ExecutiveDecisionTraceability(
+            primary_issue="TECHNOLOGY_DELIVERY_CONSTRAINT",
+            strategic_trigger="STRATEGIC_CAPABILITY",
+            trigger_evidence=(
+                "Digital origination remains dependent on manual "
+                "multi-stage processing."
+            ),
+            confidence="HIGH",
+        ),
+    )
+
+    orchestrator = StrategicIntelligenceOrchestrator()
+
+    result = orchestrator.run_governed_executive_pipeline(executive_view)
+
+    assert result.board_briefing.strategic_position == "TRANSFORM"
+    assert result.board_briefing.confidence == "HIGH"
+    assert result.board_briefing.decision_required == (
+        "Approve structural capability intervention."
+    )
+    assert result.board_briefing.supporting_evidence == (
+        "Digital origination remains dependent on manual multi-stage processing."
     )
