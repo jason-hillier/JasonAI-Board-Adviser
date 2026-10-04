@@ -1,5 +1,10 @@
 from dataclasses import dataclass
 
+from strategic_intervention import (
+    StrategicInterventionAssessment,
+    assess_strategic_intervention,
+)
+
 from executive_strategic_synthesis import ExecutiveStrategicView
 from board_briefing_generator import BoardBriefing, generate_board_briefing
 from board_narrative_enhancer import enhance_board_narrative
@@ -10,6 +15,7 @@ class StrategicIntelligenceResult:
     executive_view: ExecutiveStrategicView
     board_briefing: BoardBriefing
     enhanced_narrative: object = None
+    strategic_intervention: object = None
 
 
 class StrategicIntelligenceOrchestrator:
@@ -35,6 +41,7 @@ class StrategicIntelligenceOrchestrator:
     def run_governed_executive_pipeline(
         self,
         executive_view: ExecutiveStrategicView,
+        intervention_assessment: StrategicInterventionAssessment = None,
     ) -> StrategicIntelligenceResult:
         """
         Pass an already-governed executive strategic view into
@@ -50,8 +57,15 @@ class StrategicIntelligenceOrchestrator:
             board_briefing
         )
 
+        strategic_intervention = (
+            assess_strategic_intervention(intervention_assessment)
+            if intervention_assessment is not None
+            else None
+        )
+
         return StrategicIntelligenceResult(
             executive_view=executive_view,
             board_briefing=board_briefing,
             enhanced_narrative=enhanced_narrative,
+            strategic_intervention=strategic_intervention,
         )

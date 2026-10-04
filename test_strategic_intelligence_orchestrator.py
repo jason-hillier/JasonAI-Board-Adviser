@@ -190,3 +190,122 @@ def test_orchestrator_populates_enhanced_narrative_without_changing_governed_fie
         result.enhanced_narrative.supporting_evidence
         == result.board_briefing.supporting_evidence
     )
+
+
+def test_strategic_intelligence_result_exposes_strategic_intervention():
+    from dataclasses import fields
+    from strategic_intelligence_orchestrator import StrategicIntelligenceResult
+
+    field_names = {
+        field.name
+        for field in fields(StrategicIntelligenceResult)
+    }
+
+    assert "strategic_intervention" in field_names
+
+
+def test_governed_pipeline_populates_strategic_intervention_from_assessment():
+    from strategic_intervention import StrategicInterventionAssessment
+    from strategic_intelligence_orchestrator import (
+        StrategicIntelligenceOrchestrator,
+    )
+
+    from executive_strategic_synthesis import (
+        ExecutiveDecisionTraceability,
+        ExecutiveStrategicView,
+    )
+
+    executive_view = ExecutiveStrategicView(
+        strategic_position="TRANSFORM",
+        executive_summary=(
+            "The strategic objective remains valid, but current "
+            "delivery capability is insufficient."
+        ),
+        primary_issue="TECHNOLOGY_DELIVERY_CONSTRAINT",
+        board_implication=(
+            "The organisation cannot sustainably deliver the required "
+            "strategic outcome using the current capability."
+        ),
+        recommended_response=(
+            "Transform the underlying organisational and technology capability."
+        ),
+        decision_required="Approve structural capability intervention.",
+        confidence="HIGH",
+        traceability=ExecutiveDecisionTraceability(
+            primary_issue="TECHNOLOGY_DELIVERY_CONSTRAINT",
+            strategic_trigger="STRATEGIC_CAPABILITY",
+            trigger_evidence=(
+                "Digital origination remains dependent on manual "
+                "multi-stage processing."
+            ),
+            confidence="HIGH",
+        ),
+    )
+
+    intervention_assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=True,
+        operating_model_fit=True,
+        technology_data_fit=False,
+        organisational_boundaries_fit=True,
+        incumbent_changeable=True,
+        transformation_economics_viable=True,
+        time_to_value_acceptable=True,
+        confidence="HIGH",
+    )
+
+    orchestrator = StrategicIntelligenceOrchestrator()
+
+    result = orchestrator.run_governed_executive_pipeline(
+        executive_view,
+        intervention_assessment=intervention_assessment,
+    )
+
+    assert result.strategic_intervention is not None
+    assert result.strategic_intervention.primary_intervention == "MODERNISE"
+    assert result.strategic_intervention.confidence == "HIGH"
+
+
+def test_governed_pipeline_does_not_infer_intervention_without_assessment():
+    from executive_strategic_synthesis import (
+        ExecutiveDecisionTraceability,
+        ExecutiveStrategicView,
+    )
+    from strategic_intelligence_orchestrator import (
+        StrategicIntelligenceOrchestrator,
+    )
+
+    executive_view = ExecutiveStrategicView(
+        strategic_position="TRANSFORM",
+        executive_summary=(
+            "The strategic objective remains valid, but current "
+            "delivery capability is insufficient."
+        ),
+        primary_issue="TECHNOLOGY_DELIVERY_CONSTRAINT",
+        board_implication=(
+            "The organisation cannot sustainably deliver the required "
+            "strategic outcome using the current capability."
+        ),
+        recommended_response=(
+            "Transform the underlying organisational and technology capability."
+        ),
+        decision_required="Approve structural capability intervention.",
+        confidence="HIGH",
+        traceability=ExecutiveDecisionTraceability(
+            primary_issue="TECHNOLOGY_DELIVERY_CONSTRAINT",
+            strategic_trigger="STRATEGIC_CAPABILITY",
+            trigger_evidence=(
+                "Digital origination remains dependent on manual "
+                "multi-stage processing."
+            ),
+            confidence="HIGH",
+        ),
+    )
+
+    orchestrator = StrategicIntelligenceOrchestrator()
+
+    result = orchestrator.run_governed_executive_pipeline(
+        executive_view
+    )
+
+    assert result.strategic_intervention is None
