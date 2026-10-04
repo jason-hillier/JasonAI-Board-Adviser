@@ -161,3 +161,51 @@ def test_narrative_enhancer_integrates_governed_ollama_generator():
     assert enhanced.supporting_evidence == (
         "Structural capability gap confirmed."
     )
+
+
+def test_narrative_enhancement_preserves_strategic_intervention():
+    from board_briefing_generator import BoardBriefing
+    from board_narrative_enhancer import enhance_board_narrative
+    from strategic_intervention import StrategicInterventionResult
+
+    intervention = StrategicInterventionResult(
+        primary_intervention="MODERNISE",
+        supported_interventions=["MODERNISE"],
+        unsupported_interventions=[
+            "REDESIGN",
+            "RECONFIGURE",
+            "REINVENT",
+            "REFOUND",
+        ],
+        rationale="Technology and data capability require modernisation.",
+        confidence="HIGH",
+    )
+
+    briefing = BoardBriefing(
+        strategic_position="TRANSFORM",
+        confidence="HIGH",
+        executive_summary=(
+            "Current technology capability constrains delivery."
+        ),
+        board_implication=(
+            "The strategic objective remains valid."
+        ),
+        recommended_response=(
+            "Modernise the enabling capability."
+        ),
+        decision_required=(
+            "Approve capability intervention."
+        ),
+        supporting_evidence=(
+            "Legacy technology constrains delivery."
+        ),
+        strategic_intervention=intervention,
+    )
+
+    enhanced = enhance_board_narrative(briefing)
+
+    assert enhanced.strategic_intervention is intervention
+    assert (
+        enhanced.strategic_intervention.primary_intervention
+        == "MODERNISE"
+    )

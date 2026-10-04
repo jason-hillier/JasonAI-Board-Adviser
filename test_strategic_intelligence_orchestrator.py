@@ -309,3 +309,56 @@ def test_governed_pipeline_does_not_infer_intervention_without_assessment():
     )
 
     assert result.strategic_intervention is None
+
+
+def test_board_briefing_receives_same_governed_strategic_intervention():
+    from executive_strategic_synthesis import (
+        ExecutiveDecisionTraceability,
+        ExecutiveStrategicView,
+    )
+    from strategic_intervention import StrategicInterventionAssessment
+    from strategic_intelligence_orchestrator import (
+        StrategicIntelligenceOrchestrator,
+    )
+
+    executive_view = ExecutiveStrategicView(
+        strategic_position="TRANSFORM",
+        executive_summary="Structural capability change is required.",
+        primary_issue="TECHNOLOGY_DELIVERY_CONSTRAINT",
+        board_implication="Current capability cannot sustain the strategy.",
+        recommended_response="Transform the underlying capability.",
+        decision_required="Approve structural capability intervention.",
+        confidence="HIGH",
+        traceability=ExecutiveDecisionTraceability(
+            primary_issue="TECHNOLOGY_DELIVERY_CONSTRAINT",
+            strategic_trigger="STRATEGIC_CAPABILITY",
+            trigger_evidence="Legacy technology constrains delivery.",
+            confidence="HIGH",
+        ),
+    )
+
+    assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=True,
+        operating_model_fit=True,
+        technology_data_fit=False,
+        organisational_boundaries_fit=True,
+        incumbent_changeable=True,
+        transformation_economics_viable=True,
+        time_to_value_acceptable=True,
+        confidence="HIGH",
+    )
+
+    orchestrator = StrategicIntelligenceOrchestrator()
+
+    result = orchestrator.run_governed_executive_pipeline(
+        executive_view,
+        intervention_assessment=assessment,
+    )
+
+    assert result.strategic_intervention.primary_intervention == "MODERNISE"
+
+    assert (
+        result.board_briefing.strategic_intervention
+        is result.strategic_intervention
+    )

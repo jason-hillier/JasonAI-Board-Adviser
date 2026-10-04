@@ -83,3 +83,15 @@ def test_board_briefing_preserves_governed_decision_and_evidence():
     assert briefing.supporting_evidence == (
         executive_view.traceability.trigger_evidence
     )
+
+
+def test_board_briefing_exposes_strategic_intervention():
+    from dataclasses import fields
+    from board_briefing_generator import BoardBriefing
+
+    field_names = {
+        field.name
+        for field in fields(BoardBriefing)
+    }
+
+    assert "strategic_intervention" in field_names

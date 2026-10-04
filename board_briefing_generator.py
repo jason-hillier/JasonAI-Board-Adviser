@@ -12,7 +12,7 @@ class BoardBriefing:
     recommended_response: str
     decision_required: str
     supporting_evidence: str
-
+    strategic_intervention: object = None
 
 def generate_board_briefing(
     executive_view: ExecutiveStrategicView,

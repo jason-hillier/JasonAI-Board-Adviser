@@ -51,16 +51,17 @@ class StrategicIntelligenceOrchestrator:
         confidence, decision requirements or traceability.
         """
 
-        board_briefing = generate_board_briefing(executive_view)
-
-        enhanced_narrative = enhance_board_narrative(
-            board_briefing
-        )
-
         strategic_intervention = (
             assess_strategic_intervention(intervention_assessment)
             if intervention_assessment is not None
             else None
+        )
+
+        board_briefing = generate_board_briefing(executive_view)
+        board_briefing.strategic_intervention = strategic_intervention
+
+        enhanced_narrative = enhance_board_narrative(
+            board_briefing
         )
 
         return StrategicIntelligenceResult(
