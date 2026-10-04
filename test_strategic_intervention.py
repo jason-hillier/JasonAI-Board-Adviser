@@ -217,3 +217,198 @@ def test_unknown_material_dimension_returns_insufficient_evidence():
 
     assert "insufficient" in result.rationale.lower()
     assert "operating_model_fit" in result.rationale
+
+
+def test_intervention_result_exposes_board_option_structure():
+    assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=True,
+        operating_model_fit=False,
+        technology_data_fit=False,
+        organisational_boundaries_fit=True,
+        incumbent_changeable=True,
+        transformation_economics_viable=True,
+        time_to_value_acceptable=True,
+        confidence="HIGH",
+    )
+
+    result = assess_strategic_intervention(assessment)
+
+    assert result.primary_intervention == "REDESIGN"
+    assert result.complementary_interventions == ["MODERNISE"]
+
+    assert hasattr(result, "alternative_interventions")
+    assert hasattr(result, "unsupported_interventions")
+
+
+def test_modernise_case_identifies_unsupported_structural_interventions():
+    assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=True,
+        operating_model_fit=True,
+        technology_data_fit=False,
+        organisational_boundaries_fit=True,
+        incumbent_changeable=True,
+        transformation_economics_viable=True,
+        time_to_value_acceptable=True,
+        confidence="HIGH",
+    )
+
+    result = assess_strategic_intervention(assessment)
+
+    assert result.primary_intervention == "MODERNISE"
+
+    assert result.unsupported_interventions == [
+        "REDESIGN",
+        "RECONFIGURE",
+        "REINVENT",
+        "REFOUND",
+    ]
+
+    assert result.alternative_interventions == []
+
+
+def test_redesign_case_identifies_unsupported_more_structural_interventions():
+    assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=True,
+        operating_model_fit=False,
+        technology_data_fit=True,
+        organisational_boundaries_fit=True,
+        incumbent_changeable=True,
+        transformation_economics_viable=True,
+        time_to_value_acceptable=True,
+        confidence="HIGH",
+    )
+
+    result = assess_strategic_intervention(assessment)
+
+    assert result.primary_intervention == "REDESIGN"
+
+    assert result.unsupported_interventions == [
+        "RECONFIGURE",
+        "REINVENT",
+        "REFOUND",
+    ]
+
+    assert result.complementary_interventions == []
+    assert result.alternative_interventions == []
+
+
+def test_reconfigure_case_identifies_unsupported_interventions():
+    assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=True,
+        operating_model_fit=True,
+        technology_data_fit=True,
+        organisational_boundaries_fit=False,
+        incumbent_changeable=True,
+        transformation_economics_viable=True,
+        time_to_value_acceptable=True,
+        confidence="HIGH",
+    )
+
+    result = assess_strategic_intervention(assessment)
+
+    assert result.primary_intervention == "RECONFIGURE"
+
+    assert result.unsupported_interventions == [
+        "REDESIGN",
+        "REINVENT",
+        "REFOUND",
+    ]
+
+    assert result.complementary_interventions == []
+    assert result.alternative_interventions == []
+
+
+def test_unfit_business_model_supports_reinvent():
+    assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=False,
+        operating_model_fit=True,
+        technology_data_fit=True,
+        organisational_boundaries_fit=True,
+        incumbent_changeable=True,
+        transformation_economics_viable=True,
+        time_to_value_acceptable=True,
+        confidence="HIGH",
+    )
+
+    result = assess_strategic_intervention(assessment)
+
+    assert result.primary_intervention == "REINVENT"
+    assert result.confidence == "HIGH"
+
+    assert result.supported_interventions == ["REINVENT"]
+
+    assert result.unsupported_interventions == [
+        "REFOUND",
+    ]
+
+    assert result.complementary_interventions == []
+    assert result.alternative_interventions == []
+
+    assert "business model" in result.rationale.lower()
+
+
+def test_unchangeable_incumbent_with_unviable_transformation_supports_refound():
+    assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=False,
+        operating_model_fit=False,
+        technology_data_fit=False,
+        organisational_boundaries_fit=False,
+        incumbent_changeable=False,
+        transformation_economics_viable=False,
+        time_to_value_acceptable=False,
+        confidence="HIGH",
+    )
+
+    result = assess_strategic_intervention(assessment)
+
+    assert result.primary_intervention == "REFOUND"
+    assert result.confidence == "HIGH"
+
+    assert "REFOUND" in result.supported_interventions
+
+    assert result.complementary_interventions == []
+    assert result.alternative_interventions == []
+
+    assert "incumbent" in result.rationale.lower()
+    assert "economic" in result.rationale.lower()
+    assert "time" in result.rationale.lower()
+
+
+def test_fit_strategic_architecture_supports_optimise():
+    assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=True,
+        operating_model_fit=True,
+        technology_data_fit=True,
+        organisational_boundaries_fit=True,
+        incumbent_changeable=True,
+        transformation_economics_viable=True,
+        time_to_value_acceptable=True,
+        confidence="HIGH",
+    )
+
+    result = assess_strategic_intervention(assessment)
+
+    assert result.primary_intervention == "OPTIMISE"
+    assert result.confidence == "HIGH"
+
+    assert result.supported_interventions == ["OPTIMISE"]
+
+    assert result.unsupported_interventions == [
+        "MODERNISE",
+        "REDESIGN",
+        "RECONFIGURE",
+        "REINVENT",
+        "REFOUND",
+    ]
+
+    assert result.complementary_interventions == []
+    assert result.alternative_interventions == []
+
+    assert "optim" in result.rationale.lower()

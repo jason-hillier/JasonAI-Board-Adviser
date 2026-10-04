@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -20,7 +20,9 @@ class StrategicInterventionResult:
     supported_interventions: list[str]
     rationale: str
     confidence: str
-    complementary_interventions: list[str] = None
+    complementary_interventions: list[str] = field(default_factory=list)
+    alternative_interventions: list[str] = field(default_factory=list)
+    unsupported_interventions: list[str] = field(default_factory=list)
 
 
 def assess_strategic_intervention(
@@ -70,6 +72,56 @@ def assess_strategic_intervention(
 
     if (
         assessment.strategic_thesis_valid
+        and not assessment.business_model_valid
+        and not assessment.operating_model_fit
+        and not assessment.technology_data_fit
+        and not assessment.organisational_boundaries_fit
+        and not assessment.incumbent_changeable
+        and not assessment.transformation_economics_viable
+        and not assessment.time_to_value_acceptable
+    ):
+        return StrategicInterventionResult(
+            primary_intervention="REFOUND",
+            supported_interventions=["REFOUND"],
+            rationale=(
+                "The strategic intent remains valid, but the incumbent "
+                "organisation is not credibly changeable into the required "
+                "future state. The current business model, operating model, "
+                "technology and organisational boundaries are also unfit, "
+                "while transformation economics are unviable and the "
+                "required time-to-value is unacceptable. Refounding the "
+                "organisation on a new structural foundation is therefore "
+                "supported over transformation of the incumbent."
+            ),
+            confidence=assessment.confidence,
+        )
+
+    if (
+        assessment.strategic_thesis_valid
+        and not assessment.business_model_valid
+        and assessment.operating_model_fit
+        and assessment.technology_data_fit
+        and assessment.organisational_boundaries_fit
+        and assessment.incumbent_changeable
+        and assessment.transformation_economics_viable
+        and assessment.time_to_value_acceptable
+    ):
+        return StrategicInterventionResult(
+            primary_intervention="REINVENT",
+            supported_interventions=["REINVENT"],
+            unsupported_interventions=["REFOUND"],
+            rationale=(
+                "The strategic thesis remains valid, but the current "
+                "business model is no longer fit to deliver the required "
+                "strategic outcome. Business-model reinvention is therefore "
+                "supported while the incumbent remains changeable and the "
+                "economics and time-to-value remain viable."
+            ),
+            confidence=assessment.confidence,
+        )
+
+    if (
+        assessment.strategic_thesis_valid
         and assessment.business_model_valid
         and not assessment.operating_model_fit
         and not assessment.technology_data_fit
@@ -108,6 +160,12 @@ def assess_strategic_intervention(
         return StrategicInterventionResult(
             primary_intervention="MODERNISE",
             supported_interventions=["MODERNISE"],
+            unsupported_interventions=[
+                "REDESIGN",
+                "RECONFIGURE",
+                "REINVENT",
+                "REFOUND",
+            ],
             rationale=(
                 "The strategic thesis, business model and operating model "
                 "remain valid, but enabling technology or data capability "
@@ -131,6 +189,11 @@ def assess_strategic_intervention(
         return StrategicInterventionResult(
             primary_intervention="REDESIGN",
             supported_interventions=["REDESIGN"],
+            unsupported_interventions=[
+                "RECONFIGURE",
+                "REINVENT",
+                "REFOUND",
+            ],
             rationale=(
                 "The strategic thesis and business model remain valid, "
                 "but the operating model is structurally unfit to deliver "
@@ -154,6 +217,11 @@ def assess_strategic_intervention(
         return StrategicInterventionResult(
             primary_intervention="RECONFIGURE",
             supported_interventions=["RECONFIGURE"],
+            unsupported_interventions=[
+                "REDESIGN",
+                "REINVENT",
+                "REFOUND",
+            ],
             rationale=(
                 "The strategic thesis, business model, operating model "
                 "and enabling capabilities remain viable, but the current "
@@ -227,6 +295,13 @@ def assess_strategic_intervention(
         return StrategicInterventionResult(
             primary_intervention="OPTIMISE",
             supported_interventions=["OPTIMISE"],
+            unsupported_interventions=[
+                "MODERNISE",
+                "REDESIGN",
+                "RECONFIGURE",
+                "REINVENT",
+                "REFOUND",
+            ],
             rationale=(
                 "The strategic thesis, business model, operating model, "
                 "technology and data capabilities, and organisational "
