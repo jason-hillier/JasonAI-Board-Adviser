@@ -125,6 +125,40 @@ def assess_strategic_intervention(
         and assessment.business_model_valid
         and not assessment.operating_model_fit
         and not assessment.technology_data_fit
+        and not assessment.organisational_boundaries_fit
+        and assessment.incumbent_changeable
+        and assessment.transformation_economics_viable
+        and assessment.time_to_value_acceptable
+    ):
+        return StrategicInterventionResult(
+            primary_intervention="REDESIGN",
+            supported_interventions=[
+                "REDESIGN",
+                "MODERNISE",
+            ],
+            complementary_interventions=[
+                "MODERNISE",
+            ],
+            alternative_interventions=[
+                "RECONFIGURE",
+            ],
+            rationale=(
+                "The operating model is structurally unfit and the enabling "
+                "technology or data capability is also deficient. "
+                "Operating-model redesign is therefore the primary "
+                "intervention, supported by technology and data "
+                "modernisation. The organisational boundaries are also "
+                "unfit, making reconfiguration a credible alternative "
+                "strategic route."
+            ),
+            confidence=assessment.confidence,
+        )
+
+    if (
+        assessment.strategic_thesis_valid
+        and assessment.business_model_valid
+        and not assessment.operating_model_fit
+        and not assessment.technology_data_fit
         and assessment.organisational_boundaries_fit
         and assessment.incumbent_changeable
         and assessment.transformation_economics_viable
@@ -172,6 +206,30 @@ def assess_strategic_intervention(
                 "is materially deficient. Modernisation is therefore "
                 "supported without requiring structural redesign or "
                 "business-model reinvention."
+            ),
+            confidence=assessment.confidence,
+        )
+
+    if (
+        assessment.strategic_thesis_valid
+        and assessment.business_model_valid
+        and not assessment.operating_model_fit
+        and assessment.technology_data_fit
+        and not assessment.organisational_boundaries_fit
+        and assessment.incumbent_changeable
+        and assessment.transformation_economics_viable
+        and assessment.time_to_value_acceptable
+    ):
+        return StrategicInterventionResult(
+            primary_intervention="REDESIGN",
+            supported_interventions=["REDESIGN"],
+            alternative_interventions=["RECONFIGURE"],
+            rationale=(
+                "The operating model is structurally unfit and the current "
+                "organisational boundaries are also unfit. Operating-model "
+                "redesign is the primary intervention, while reconfiguration "
+                "of organisational boundaries represents a credible "
+                "alternative strategic route."
             ),
             confidence=assessment.confidence,
         )
@@ -313,6 +371,15 @@ def assess_strategic_intervention(
             confidence=assessment.confidence,
         )
 
-    raise ValueError(
-        "Insufficient intervention rules for the supplied assessment."
+    return StrategicInterventionResult(
+        primary_intervention="INSUFFICIENT_EVIDENCE",
+        supported_interventions=[],
+        complementary_interventions=[],
+        alternative_interventions=[],
+        unsupported_interventions=[],
+        rationale=(
+            "The available evidence is insufficient to support a governed "
+            "strategic intervention recommendation."
+        ),
+        confidence=assessment.confidence,
     )

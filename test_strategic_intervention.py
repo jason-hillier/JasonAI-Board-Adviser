@@ -412,3 +412,91 @@ def test_fit_strategic_architecture_supports_optimise():
     assert result.alternative_interventions == []
 
     assert "optim" in result.rationale.lower()
+
+
+def test_operating_model_and_boundary_gaps_surface_reconfigure_as_alternative():
+    assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=True,
+        operating_model_fit=False,
+        technology_data_fit=True,
+        organisational_boundaries_fit=False,
+        incumbent_changeable=True,
+        transformation_economics_viable=True,
+        time_to_value_acceptable=True,
+        confidence="HIGH",
+    )
+
+    result = assess_strategic_intervention(assessment)
+
+    assert result.primary_intervention == "REDESIGN"
+    assert result.supported_interventions == ["REDESIGN"]
+
+    assert result.alternative_interventions == [
+        "RECONFIGURE",
+    ]
+
+    assert result.complementary_interventions == []
+
+    assert "operating model" in result.rationale.lower()
+    assert "boundar" in result.rationale.lower()
+
+
+def test_compound_gaps_surface_primary_complementary_and_alternative_routes():
+    assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=True,
+        operating_model_fit=False,
+        technology_data_fit=False,
+        organisational_boundaries_fit=False,
+        incumbent_changeable=True,
+        transformation_economics_viable=True,
+        time_to_value_acceptable=True,
+        confidence="HIGH",
+    )
+
+    result = assess_strategic_intervention(assessment)
+
+    assert result.primary_intervention == "REDESIGN"
+
+    assert result.supported_interventions == [
+        "REDESIGN",
+        "MODERNISE",
+    ]
+
+    assert result.complementary_interventions == [
+        "MODERNISE",
+    ]
+
+    assert result.alternative_interventions == [
+        "RECONFIGURE",
+    ]
+
+    assert "operating model" in result.rationale.lower()
+    assert "technology" in result.rationale.lower()
+    assert "boundar" in result.rationale.lower()
+
+    assert result.confidence == "HIGH"
+
+
+def test_unchangeable_incumbent_alone_does_not_support_refound():
+    assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=True,
+        operating_model_fit=True,
+        technology_data_fit=True,
+        organisational_boundaries_fit=True,
+        incumbent_changeable=False,
+        transformation_economics_viable=True,
+        time_to_value_acceptable=True,
+        confidence="HIGH",
+    )
+
+    result = assess_strategic_intervention(assessment)
+
+    assert result.primary_intervention == "INSUFFICIENT_EVIDENCE"
+    assert result.supported_interventions == []
+    assert result.complementary_interventions == []
+    assert result.alternative_interventions == []
+    assert result.confidence == "HIGH"
+    assert "insufficient" in result.rationale.lower()
