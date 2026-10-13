@@ -362,3 +362,54 @@ def test_board_briefing_receives_same_governed_strategic_intervention():
         result.board_briefing.strategic_intervention
         is result.strategic_intervention
     )
+
+
+def test_orchestrator_populates_board_intervention_summary():
+    from executive_strategic_synthesis import (
+        ExecutiveDecisionTraceability,
+        ExecutiveStrategicView,
+    )
+    from strategic_intervention import StrategicInterventionAssessment
+    from strategic_intelligence_orchestrator import (
+        StrategicIntelligenceOrchestrator,
+    )
+
+    executive_view = ExecutiveStrategicView(
+        strategic_position="TRANSFORM",
+        executive_summary="Structural capability change is required.",
+        primary_issue="TECHNOLOGY_DELIVERY_CONSTRAINT",
+        board_implication="Current capability cannot sustain the strategy.",
+        recommended_response="Transform the underlying capability.",
+        decision_required="Approve structural capability intervention.",
+        confidence="HIGH",
+        traceability=ExecutiveDecisionTraceability(
+            primary_issue="TECHNOLOGY_DELIVERY_CONSTRAINT",
+            strategic_trigger="STRATEGIC_CAPABILITY",
+            trigger_evidence="Legacy technology constrains delivery.",
+            confidence="HIGH",
+        ),
+    )
+
+    assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=True,
+        operating_model_fit=False,
+        technology_data_fit=False,
+        organisational_boundaries_fit=True,
+        incumbent_changeable=True,
+        transformation_economics_viable=True,
+        time_to_value_acceptable=True,
+        confidence="HIGH",
+    )
+
+    result = StrategicIntelligenceOrchestrator().run_governed_executive_pipeline(
+        executive_view,
+        intervention_assessment=assessment,
+    )
+
+    summary = result.board_briefing.intervention_summary
+
+    assert summary is not None
+    assert summary.primary == "REDESIGN"
+    assert summary.complementary == ["MODERNISE"]
+    assert summary.confidence == "HIGH"

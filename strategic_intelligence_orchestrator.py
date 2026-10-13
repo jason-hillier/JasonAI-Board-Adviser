@@ -6,7 +6,11 @@ from strategic_intervention import (
 )
 
 from executive_strategic_synthesis import ExecutiveStrategicView
-from board_briefing_generator import BoardBriefing, generate_board_briefing
+from board_briefing_generator import (
+    BoardBriefing,
+    generate_board_briefing,
+    build_board_intervention_summary,
+)
 from board_narrative_enhancer import enhance_board_narrative
 
 
@@ -59,6 +63,11 @@ class StrategicIntelligenceOrchestrator:
 
         board_briefing = generate_board_briefing(executive_view)
         board_briefing.strategic_intervention = strategic_intervention
+        board_briefing.intervention_summary = (
+            build_board_intervention_summary(strategic_intervention)
+            if strategic_intervention is not None
+            else None
+        )
 
         enhanced_narrative = enhance_board_narrative(
             board_briefing

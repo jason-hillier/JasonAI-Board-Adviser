@@ -95,3 +95,63 @@ def test_board_briefing_exposes_strategic_intervention():
     }
 
     assert "strategic_intervention" in field_names
+
+
+def test_board_briefing_exposes_board_intervention_summary():
+    from dataclasses import fields
+    from board_briefing_generator import BoardBriefing
+
+    field_names = {
+        field.name
+        for field in fields(BoardBriefing)
+    }
+
+    assert "intervention_summary" in field_names
+
+
+def test_board_intervention_summary_has_governed_board_fields():
+    from board_briefing_generator import BoardInterventionSummary
+
+    summary = BoardInterventionSummary(
+        primary="REDESIGN",
+        complementary=["MODERNISE"],
+        alternatives=["RECONFIGURE"],
+        unsupported=["REINVENT", "REFOUND"],
+        confidence="HIGH",
+        rationale="The operating model is not fit for the strategic requirement.",
+    )
+
+    assert summary.primary == "REDESIGN"
+    assert summary.complementary == ["MODERNISE"]
+    assert summary.alternatives == ["RECONFIGURE"]
+    assert summary.unsupported == ["REINVENT", "REFOUND"]
+    assert summary.confidence == "HIGH"
+    assert summary.rationale == (
+        "The operating model is not fit for the strategic requirement."
+    )
+
+
+def test_build_board_intervention_summary_preserves_governed_intervention():
+    from board_briefing_generator import build_board_intervention_summary
+    from strategic_intervention import StrategicInterventionResult
+
+    intervention = StrategicInterventionResult(
+        primary_intervention="REDESIGN",
+        supported_interventions=["REDESIGN", "MODERNISE"],
+        complementary_interventions=["MODERNISE"],
+        alternative_interventions=["RECONFIGURE"],
+        unsupported_interventions=["REINVENT", "REFOUND"],
+        rationale="The operating model requires material redesign.",
+        confidence="HIGH",
+    )
+
+    summary = build_board_intervention_summary(intervention)
+
+    assert summary.primary == "REDESIGN"
+    assert summary.complementary == ["MODERNISE"]
+    assert summary.alternatives == ["RECONFIGURE"]
+    assert summary.unsupported == ["REINVENT", "REFOUND"]
+    assert summary.confidence == "HIGH"
+    assert summary.rationale == (
+        "The operating model requires material redesign."
+    )
