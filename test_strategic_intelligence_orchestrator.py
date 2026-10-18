@@ -413,3 +413,60 @@ def test_orchestrator_populates_board_intervention_summary():
     assert summary.primary == "REDESIGN"
     assert summary.complementary == ["MODERNISE"]
     assert summary.confidence == "HIGH"
+
+
+def test_orchestrator_populates_board_intervention_evidence():
+    from executive_strategic_synthesis import (
+        ExecutiveDecisionTraceability,
+        ExecutiveStrategicView,
+    )
+    from strategic_intervention import StrategicInterventionAssessment
+    from strategic_intelligence_orchestrator import (
+        StrategicIntelligenceOrchestrator,
+    )
+
+    executive_view = ExecutiveStrategicView(
+        strategic_position="TRANSFORM",
+        executive_summary="Structural capability change is required.",
+        primary_issue="TECHNOLOGY_DELIVERY_CONSTRAINT",
+        board_implication="Current capabilities constrain delivery.",
+        recommended_response="Transform the underlying capability.",
+        decision_required="Approve strategic intervention.",
+        confidence="HIGH",
+        traceability=ExecutiveDecisionTraceability(
+            primary_issue="TECHNOLOGY_DELIVERY_CONSTRAINT",
+            strategic_trigger="STRATEGIC_CAPABILITY",
+            trigger_evidence="Legacy technology constrains delivery.",
+            confidence="HIGH",
+        ),
+    )
+
+    assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=True,
+        operating_model_fit=False,
+        technology_data_fit=False,
+        organisational_boundaries_fit=False,
+        incumbent_changeable=True,
+        transformation_economics_viable=True,
+        time_to_value_acceptable=True,
+        confidence="HIGH",
+    )
+
+    result = StrategicIntelligenceOrchestrator().run_governed_executive_pipeline(
+        executive_view,
+        intervention_assessment=assessment,
+    )
+
+    summary = result.board_briefing.intervention_summary
+
+    assert summary.primary == "REDESIGN"
+    assert summary.complementary == ["MODERNISE"]
+    assert summary.alternatives == ["RECONFIGURE"]
+
+    assert len(summary.evidence) == 3
+    assert [item.intervention for item in summary.evidence] == [
+        "REDESIGN",
+        "MODERNISE",
+        "RECONFIGURE",
+    ]

@@ -155,3 +155,178 @@ def test_build_board_intervention_summary_preserves_governed_intervention():
     assert summary.rationale == (
         "The operating model requires material redesign."
     )
+
+
+def test_board_intervention_evidence_traceability_contract():
+    from board_briefing_generator import BoardInterventionEvidence
+
+    evidence = BoardInterventionEvidence(
+        intervention="REDESIGN",
+        dimension="OPERATING_MODEL",
+        observed_state="NOT_FIT",
+        implication="Operating model change is required.",
+        confidence="HIGH",
+    )
+
+    assert evidence.intervention == "REDESIGN"
+    assert evidence.dimension == "OPERATING_MODEL"
+    assert evidence.observed_state == "NOT_FIT"
+    assert evidence.implication == "Operating model change is required."
+    assert evidence.confidence == "HIGH"
+
+
+def test_build_redesign_evidence_from_operating_model_assessment():
+    from board_briefing_generator import build_board_intervention_evidence
+    from strategic_intervention import StrategicInterventionAssessment
+
+    assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=True,
+        operating_model_fit=False,
+        technology_data_fit=True,
+        organisational_boundaries_fit=True,
+        incumbent_changeable=True,
+        transformation_economics_viable=True,
+        time_to_value_acceptable=True,
+        confidence="HIGH",
+    )
+
+    evidence = build_board_intervention_evidence(
+        assessment,
+        intervention="REDESIGN",
+    )
+
+    assert evidence.intervention == "REDESIGN"
+    assert evidence.dimension == "OPERATING_MODEL"
+    assert evidence.observed_state == "NOT_FIT"
+    assert evidence.confidence == "HIGH"
+    assert "operating model" in evidence.implication.lower()
+
+
+def test_build_modernise_evidence_from_technology_assessment():
+    from board_briefing_generator import build_board_intervention_evidence
+    from strategic_intervention import StrategicInterventionAssessment
+
+    assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=True,
+        operating_model_fit=False,
+        technology_data_fit=False,
+        organisational_boundaries_fit=True,
+        incumbent_changeable=True,
+        transformation_economics_viable=True,
+        time_to_value_acceptable=True,
+        confidence="HIGH",
+    )
+
+    evidence = build_board_intervention_evidence(
+        assessment,
+        intervention="MODERNISE",
+    )
+
+    assert evidence.intervention == "MODERNISE"
+    assert evidence.dimension == "TECHNOLOGY_DATA"
+    assert evidence.observed_state == "NOT_FIT"
+    assert evidence.confidence == "HIGH"
+    assert "technology" in evidence.implication.lower()
+
+
+def test_build_reconfigure_evidence_from_boundary_assessment():
+    from board_briefing_generator import build_board_intervention_evidence
+    from strategic_intervention import StrategicInterventionAssessment
+
+    assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=True,
+        operating_model_fit=True,
+        technology_data_fit=True,
+        organisational_boundaries_fit=False,
+        incumbent_changeable=True,
+        transformation_economics_viable=True,
+        time_to_value_acceptable=True,
+        confidence="HIGH",
+    )
+
+    evidence = build_board_intervention_evidence(
+        assessment,
+        intervention="RECONFIGURE",
+    )
+
+    assert evidence.intervention == "RECONFIGURE"
+    assert evidence.dimension == "ORGANISATIONAL_BOUNDARIES"
+    assert evidence.observed_state == "NOT_FIT"
+    assert evidence.confidence == "HIGH"
+    assert "boundaries" in evidence.implication.lower()
+
+
+def test_board_intervention_summary_supports_evidence_records():
+    from board_briefing_generator import (
+        BoardInterventionSummary,
+        BoardInterventionEvidence,
+    )
+
+    evidence = BoardInterventionEvidence(
+        intervention="REDESIGN",
+        dimension="OPERATING_MODEL",
+        observed_state="NOT_FIT",
+        implication="The operating model requires redesign.",
+        confidence="HIGH",
+    )
+
+    summary = BoardInterventionSummary(
+        primary="REDESIGN",
+        complementary=["MODERNISE"],
+        alternatives=["RECONFIGURE"],
+        unsupported=["REINVENT", "REFOUND"],
+        confidence="HIGH",
+        rationale="Structural operating model change is required.",
+        evidence=[evidence],
+    )
+
+    assert len(summary.evidence) == 1
+    assert summary.evidence[0].intervention == "REDESIGN"
+    assert summary.evidence[0].dimension == "OPERATING_MODEL"
+
+
+def test_assemble_board_intervention_evidence_for_three_way_scenario():
+    from board_briefing_generator import assemble_board_intervention_evidence
+    from strategic_intervention import (
+        StrategicInterventionAssessment,
+        assess_strategic_intervention,
+    )
+
+    assessment = StrategicInterventionAssessment(
+        strategic_thesis_valid=True,
+        business_model_valid=True,
+        operating_model_fit=False,
+        technology_data_fit=False,
+        organisational_boundaries_fit=False,
+        incumbent_changeable=True,
+        transformation_economics_viable=True,
+        time_to_value_acceptable=True,
+        confidence="HIGH",
+    )
+
+    result = assess_strategic_intervention(assessment)
+
+    assert result.primary_intervention == "REDESIGN"
+    assert result.complementary_interventions == ["MODERNISE"]
+    assert result.alternative_interventions == ["RECONFIGURE"]
+
+    evidence = assemble_board_intervention_evidence(
+        assessment,
+        result,
+    )
+
+    assert len(evidence) == 3
+    assert [item.intervention for item in evidence] == [
+        "REDESIGN",
+        "MODERNISE",
+        "RECONFIGURE",
+    ]
+    assert [item.dimension for item in evidence] == [
+        "OPERATING_MODEL",
+        "TECHNOLOGY_DATA",
+        "ORGANISATIONAL_BOUNDARIES",
+    ]
+    assert all(item.confidence == "HIGH" for item in evidence)

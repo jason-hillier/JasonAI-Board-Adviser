@@ -1,6 +1,15 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from executive_strategic_synthesis import ExecutiveStrategicView
+
+
+@dataclass(frozen=True)
+class BoardInterventionEvidence:
+    intervention: str
+    dimension: str
+    observed_state: str
+    implication: str
+    confidence: str
 
 
 @dataclass(frozen=True)
@@ -11,6 +20,7 @@ class BoardInterventionSummary:
     unsupported: list[str]
     confidence: str
     rationale: str
+    evidence: list[BoardInterventionEvidence] = field(default_factory=list)
 
 
 @dataclass
@@ -64,3 +74,94 @@ def build_board_intervention_summary(intervention):
         confidence=intervention.confidence,
         rationale=intervention.rationale,
     )
+
+
+def build_board_intervention_evidence(assessment, intervention):
+    """
+    Translate an assessed strategic condition into Board-facing
+    evidence. Does not independently verify the assessment.
+    """
+
+    if intervention == "REDESIGN":
+        if assessment.operating_model_fit is not False:
+            raise ValueError(
+                "REDESIGN requires an assessed operating-model gap."
+            )
+
+        return BoardInterventionEvidence(
+            intervention="REDESIGN",
+            dimension="OPERATING_MODEL",
+            observed_state="NOT_FIT",
+            implication=(
+                "The operating model is assessed as not fit "
+                "for the strategic requirement."
+            ),
+            confidence=assessment.confidence,
+        )
+
+    if intervention == "MODERNISE":
+        if assessment.technology_data_fit is not False:
+            raise ValueError(
+                "MODERNISE requires an assessed technology/data gap."
+            )
+
+        return BoardInterventionEvidence(
+            intervention="MODERNISE",
+            dimension="TECHNOLOGY_DATA",
+            observed_state="NOT_FIT",
+            implication=(
+                "Technology and data capabilities are assessed "
+                "as not fit for the strategic requirement."
+            ),
+            confidence=assessment.confidence,
+        )
+
+    if intervention == "RECONFIGURE":
+        if assessment.organisational_boundaries_fit is not False:
+            raise ValueError(
+                "RECONFIGURE requires an assessed organisational-boundary gap."
+            )
+
+        return BoardInterventionEvidence(
+            intervention="RECONFIGURE",
+            dimension="ORGANISATIONAL_BOUNDARIES",
+            observed_state="NOT_FIT",
+            implication=(
+                "Organisational boundaries are assessed as not fit "
+                "for the strategic requirement."
+            ),
+            confidence=assessment.confidence,
+        )
+
+    raise ValueError(
+        f"No evidence mapping defined for intervention: {intervention}"
+    )
+
+
+def assemble_board_intervention_evidence(assessment, intervention_result):
+    """
+    Assemble Board evidence in governed intervention order:
+    primary, complementary, then alternatives.
+
+    Evidence describes assessed strategic conditions.
+    It does not independently verify those conditions or
+    determine which intervention is preferable.
+    """
+    interventions = [
+        intervention_result.primary_intervention,
+        *intervention_result.complementary_interventions,
+        *intervention_result.alternative_interventions,
+    ]
+
+    if intervention_result.primary_intervention == "INSUFFICIENT_EVIDENCE":
+        return []
+
+    if len(interventions) != len(set(interventions)):
+        raise ValueError(
+            "Duplicate interventions in governed intervention result."
+        )
+
+    return [
+        build_board_intervention_evidence(assessment, intervention)
+        for intervention in interventions
+    ]
