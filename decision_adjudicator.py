@@ -153,13 +153,26 @@ def adjudicate_decision(
 
     decision_options = extract_decision_options(strategic_synthesis)
 
+    required_gate_fields = (
+        "market_decline",
+        "persistent_negative_economics",
+        "no_competitive_advantage",
+        "poor_strategic_fit",
+        "material_opportunity_cost",
+    )
+
+    if not isinstance(decision_gate_inputs, dict):
+        raise ValueError("Decision gate inputs must be a dictionary.")
+
+    for field in required_gate_fields:
+        if type(decision_gate_inputs.get(field)) is not bool:
+            raise ValueError(
+                f"Missing or invalid decision gate evidence: {field}"
+            )
+
     decision_classification = classify_decision_gate(
-        market_decline=False,
-        persistent_negative_economics=False,
-        no_competitive_advantage=False,
-        poor_strategic_fit=False,
-        material_opportunity_cost=False,
-)
+        **{field: decision_gate_inputs[field] for field in required_gate_fields}
+    )
 
     adjudication_input = f"""
 ORIGINAL PROPOSAL:
