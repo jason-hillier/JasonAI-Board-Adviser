@@ -25,7 +25,7 @@ def load_board_framework() -> str:
     return framework
 
 
-def generate_board_intelligence(document_text: str) -> str:
+def generate_board_intelligence(document_text: str, decision_gate_inputs: dict) -> str:
     """
     Generate a board-level executive intelligence report.
 
@@ -40,7 +40,10 @@ Stage 2:
     if not document_text or not document_text.strip():
         raise ValueError("No document text was supplied.")
 
-    orchestration = run_board_orchestration(document_text)
+    orchestration = run_board_orchestration(
+        document_text,
+        decision_gate_inputs=decision_gate_inputs,
+    )
 
     decision_analysis = orchestration.get("decision_analysis")
     strategy_analysis = orchestration.get("strategy_analysis")
