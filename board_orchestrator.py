@@ -6,7 +6,7 @@ from strategic_framework_engine import get_framework_guidance
 from strategic_synthesis import synthesise_strategy
 from decision_adjudicator import adjudicate_decision
 
-def run_board_orchestration(document_text: str) -> dict:
+def run_board_orchestration(document_text: str, decision_gate_inputs: dict) -> dict:
     """
     Run Macian's specialist analyses and return their outputs.
 
@@ -35,6 +35,7 @@ def run_board_orchestration(document_text: str) -> dict:
     strategy_analysis=strategy_analysis,
     finance_analysis=finance_analysis,
     strategic_synthesis=strategic_synthesis,
+        decision_gate_inputs=decision_gate_inputs,
 )
     
     decision_policy = evaluate_decision_policy(
