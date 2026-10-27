@@ -13,6 +13,7 @@ from board_briefing_generator import (
     build_board_intervention_summary,
 )
 from board_narrative_enhancer import enhance_board_narrative
+from board_strategic_challenge_engine import assess_board_strategic_challenge
 
 
 @dataclass
@@ -47,6 +48,8 @@ class StrategicIntelligenceOrchestrator:
         self,
         executive_view: ExecutiveStrategicView,
         intervention_assessment: StrategicInterventionAssessment = None,
+        challenge_evidence: str | None = None,
+        challenge_alternatives: list[str] | None = None,
     ) -> StrategicIntelligenceResult:
         """
         Pass an already-governed executive strategic view into
@@ -63,6 +66,15 @@ class StrategicIntelligenceOrchestrator:
         )
 
         board_briefing = generate_board_briefing(executive_view)
+
+        # Challenge management's recommendation only when explicitly requested.
+        # This assessment does not modify the governed strategic decision.
+        if challenge_evidence is not None or challenge_alternatives is not None:
+            board_briefing.strategic_challenge = assess_board_strategic_challenge(
+                management_recommendation=executive_view.recommended_response,
+                supporting_evidence=challenge_evidence or "",
+                alternative_options=challenge_alternatives,
+            )
         board_briefing.strategic_intervention = strategic_intervention
         board_briefing.intervention_summary = (
             build_board_intervention_summary(strategic_intervention)
