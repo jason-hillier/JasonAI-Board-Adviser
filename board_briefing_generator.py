@@ -35,6 +35,7 @@ class BoardBriefing:
     strategic_intervention: object = None
     intervention_summary: object = None
     strategic_challenge: object = None
+    strategic_assurance: object = None
 
 def generate_board_briefing(
     executive_view: ExecutiveStrategicView,

@@ -14,6 +14,7 @@ from board_briefing_generator import (
 )
 from board_narrative_enhancer import enhance_board_narrative
 from board_strategic_challenge_engine import assess_board_strategic_challenge
+from strategic_assurance_engine import assess_strategic_assurance
 
 
 @dataclass
@@ -50,6 +51,7 @@ class StrategicIntelligenceOrchestrator:
         intervention_assessment: StrategicInterventionAssessment = None,
         challenge_evidence: str | None = None,
         challenge_alternatives: list[str] | None = None,
+        assurance_evidence: dict[str, list[str]] | None = None,
     ) -> StrategicIntelligenceResult:
         """
         Pass an already-governed executive strategic view into
@@ -75,6 +77,11 @@ class StrategicIntelligenceOrchestrator:
                 supporting_evidence=challenge_evidence or "",
                 alternative_options=challenge_alternatives,
             )
+        if assurance_evidence is not None:
+            board_briefing.strategic_assurance = (
+                assess_strategic_assurance(assurance_evidence)
+            )
+
         board_briefing.strategic_intervention = strategic_intervention
         board_briefing.intervention_summary = (
             build_board_intervention_summary(strategic_intervention)
