@@ -1,0 +1,17 @@
+from enum import Enum
+
+
+class EvidenceQualityStatus(str, Enum):
+    NOT_ASSESSED = "NOT_ASSESSED"
+    INSUFFICIENT_INFORMATION = "INSUFFICIENT_INFORMATION"
+    WEAK = "WEAK"
+    ADEQUATE = "ADEQUATE"
+    STRONG = "STRONG"
+
+
+class EvidenceQualityCategory(str, Enum):
+    CREDIBILITY = "CREDIBILITY"
+    RELEVANCE = "RELEVANCE"
+    COMPLETENESS = "COMPLETENESS"
+    CONSISTENCY = "CONSISTENCY"
+    CURRENCY = "CURRENCY"
