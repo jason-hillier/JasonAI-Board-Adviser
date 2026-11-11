@@ -80,6 +80,14 @@ class TrustedKeyRegistry:
 
         return record
 
+    def is_revoked(self, key_id: str) -> bool:
+        """Return whether a registered signing key is revoked."""
+        if not isinstance(key_id, str):
+            return False
+
+        record = self._keys.get(key_id)
+        return record is not None and record.revoked
+
     def revoke(self, key_id: str) -> None:
         record = self._keys.get(key_id)
 
