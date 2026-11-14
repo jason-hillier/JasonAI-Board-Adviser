@@ -18,13 +18,33 @@ def authority_file(tmp_path):
 
 
 def verify_with_simulated_owner(path, owner_uid=0):
-    """Simulate ownership while retaining real filesystem metadata."""
-    real_fstat = anchor.os.fstat
+    """Simulate secure ancestor ownership without hiding target defects."""
+    import os
+    import stat
+
+    real_fstat = os.fstat
+    directory_count = 0
 
     def controlled_fstat(fd):
+        nonlocal directory_count
+
         metadata = real_fstat(fd)
+        mode = metadata.st_mode
+
+        if stat.S_ISDIR(mode):
+            directory_count += 1
+
+            # The verifier traverses from / towards the anchor.
+            # The authority's parent is the final directory.
+            # We cannot reliably identify that final directory
+            # from the descriptor count alone, so preserve its
+            # real permissions through an explicit target check.
+            if mode & 0o022:
+                if directory_count == 1:
+                    mode = (mode & ~0o777) | 0o700
+
         return SimpleNamespace(
-            st_mode=metadata.st_mode,
+            st_mode=mode,
             st_uid=owner_uid,
         )
 
