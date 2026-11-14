@@ -1,3 +1,8 @@
+from test_governed_trust_fixture import (
+    create_governed_trust_files,
+    provision_test_authority_anchor,
+)
+from test_isolated_verifier import run_isolated_verifier
 """Reproducible operational assurance for Macian checkpoint verification."""
 
 import base64
@@ -92,18 +97,28 @@ def run_assurance():
                 encoding="utf-8",
             )
 
-            completed = subprocess.run(
+            governance_args = create_governed_trust_files(
+                root, trust_path
+            )
+
+            verifier_directory = root / f"{name}_verifier"
+            verifier_directory.mkdir()
+
+            provision_test_authority_anchor(
+                verifier_directory,
+                (root / "authority-public.key").read_bytes(),
+            )
+
+            completed = run_isolated_verifier(
+                verifier_directory,
+                CLI,
                 [
-                    sys.executable,
-                    str(CLI),
                     "--checkpoint",
                     str(checkpoint_path),
                     "--trust-file",
                     str(trust_path),
+                    *governance_args,
                 ],
-                capture_output=True,
-                text=True,
-                check=False,
             )
 
             try:

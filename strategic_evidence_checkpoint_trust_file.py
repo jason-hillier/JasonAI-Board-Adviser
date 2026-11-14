@@ -38,9 +38,14 @@ def _validate_timestamp(value, field):
 
 def load_trust_file(path: str) -> TrustedKeyRegistry:
     """Load a strictly validated, independently maintained key registry."""
+    return load_trust_bytes(Path(path).read_bytes())
+
+
+def load_trust_bytes(trust_bytes: bytes) -> TrustedKeyRegistry:
+    """Load a strictly validated, independently maintained key registry."""
 
     data = json.loads(
-        Path(path).read_text(encoding="utf-8"),
+        trust_bytes,
         object_pairs_hook=_reject_duplicates,
     )
 
